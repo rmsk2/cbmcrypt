@@ -3,9 +3,9 @@
 CHAROUT = $FFD2
 
 !source "platform.a"
-*=START_ADDR
 
-jmp main
+entryPoint
+    jmp main
 
 !ifdef C64 {
 !source "c64.a"

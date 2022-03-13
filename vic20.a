@@ -1,5 +1,4 @@
 HELLO
 !tx "HELLO WORLD VIC20"
-!byte $0d,$0a
 
-HELLO_LEN = 19
+HELLO_LEN = 17
