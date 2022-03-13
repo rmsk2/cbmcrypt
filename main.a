@@ -1,0 +1,25 @@
+!to "cbmcrypt", cbm
+
+CHAROUT = $FFD2
+
+*=$2000
+
+jmp main
+
+HELLO
+!tx "HELLO WORLD"
+!byte $0d,$0a
+
+main
+    ldx #0
+loop
+    txa
+    pha
+    lda HELLO,x
+    jsr CHAROUT
+    pla
+    tax
+    inx
+    cpx #13
+    bne loop
+    rts

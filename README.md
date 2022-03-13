@@ -1,2 +1,2 @@
 # cbmcrypt
-Turn your Commodore computer into a crypto machine
+Turn your Commodore 8 bit computer into a crypto machine
