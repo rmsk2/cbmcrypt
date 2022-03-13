@@ -1,0 +1,15 @@
+!ifdef C64 {
+START_ADDR = $2000
+}
+
+!ifdef VIC20 {
+START_ADDR = $1200
+}
+
+!ifdef PLUS4 {
+START_ADDR = $2000
+}
+
+!ifdef C128 {
+START_ADDR = $2000
+}

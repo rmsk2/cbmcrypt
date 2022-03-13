@@ -1,1 +1,5 @@
-START_ADDR = $2000
+HELLO
+!tx "HELLO WORLD PLUS4"
+!byte $0d,$0a
+
+HELLO_LEN = 19

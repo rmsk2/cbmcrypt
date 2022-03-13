@@ -27,7 +27,7 @@ ifdef C128
 PLATFORM=C128
 endif	
 
-PLATFORM_FILES = c64.a vic20.a plus4.a c128.a
+PLATFORM_FILES = platform.a c64.a vic20.a plus4.a c128.a
 
 clean:
 	rm cbmcrypt
