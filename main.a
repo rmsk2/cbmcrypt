@@ -2,6 +2,23 @@
 
 CHAROUT = $FFD2
 
+!ifdef C64 {
+!source "c64.a"
+}
+
+!ifdef VIC20 {
+!source "vic20.a"
+}
+
+!ifdef PLUS4 {
+!source "plus4.a"
+}
+
+!ifdef C128 {
+!source "c128.a"
+}
+
+
 *=START_ADDR
 
 jmp main

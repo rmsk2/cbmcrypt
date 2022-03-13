@@ -13,13 +13,29 @@ C1541=c1541
 WORKDIR=.
 endif
 
+PLATFORM = C64
+
+ifdef VIC20
+PLATFORM=VIC20
+endif	
+
+ifdef PLUS4
+PLATFORM=PLUS4
+endif	
+
+ifdef C128
+PLATFORM=C128
+endif	
+
+PLATFORM_FILES = c64.a vic20.a plus4.a c128.a
+
 clean:
 	rm cbmcrypt
 	rm cbmcrypt.d64
 	rm cbmcrypt.txt
 
-cbmcrypt: main.a 
-	$(ACME) -l cbmcrypt.txt main.a
+cbmcrypt: $(PLATFORM_FILES) main.a
+	$(ACME) -D$(PLATFORM)=1 -l cbmcrypt.txt main.a
 
 cbmcrypt.d64: cbmcrypt
 	$(C1541) -format cbmcrypt,cc d64 $(WORKDIR)/cbmcrypt.d64 -write $(WORKDIR)/cbmcrypt
