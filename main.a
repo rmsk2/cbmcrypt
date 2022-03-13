@@ -2,7 +2,7 @@
 
 CHAROUT = $FFD2
 
-*=$2000
+*=START_ADDR
 
 jmp main
 
