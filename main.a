@@ -26,17 +26,9 @@ entryPoint
 FAST_MUL = 1
 
 !source "arith16.a"
+!source "string.a"
+!source "repl.a"
 
 main
-    ldx #0
-loop
-    txa
-    pha
-    lda HELLO,x
-    jsr CHAROUT
-    pla
-    tax
-    inx
-    cpx #HELLO_LEN
-    bne loop
+    jsr progStart
     rts

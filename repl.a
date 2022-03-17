@@ -1,0 +1,125 @@
+CMD_LEN = 3
+INCLUDE_DIAG = 1
+
+progStart
+    ;jsr showTitleScreen
+    jmp readEvalPrintLoop
+
+
+.COMMAND
+!byte 5
+!tx "CMD> "
+
+.CMD_CHARS
+!byte 26
+!tx "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+.CMD_BUFFER
+!byte CMD_LEN
+!byte 0,0,0
+
+.EXIT_COMMAND
+!byte 1
+!tx "X"
+
+.TEST_COMMAND
+!byte 3
+!tx "TST"
+
+.COMMAND_NOT_RECOGNIZED
+!byte 22
+!tx "COMMAND NOT RECOGNIZED"
+
+.ALPHA
+!byte 50
+!tx "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:-+#=() §$%&@"
+
+.DIGITS
+!byte 10
+!tx "0123456789"
+
+
+.CMD_TABLE 
+!ifdef INCLUDE_DIAG {
+!byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
+}
+!byte 0,0,0,0 ; end marker
+
+
+; --------------------------------------------------
+; readEvalPrintLoop
+; --------------------------------------------------
+readEvalPrintLoop
+.cmdLoop
+    +printStr .COMMAND
+    lda #CMD_LEN
+    sta .CMD_BUFFER
+    +inputStr .CMD_BUFFER, .CMD_CHARS
+    jsr printCRLF
+    lda .CMD_BUFFER
+    beq .cmdLoop                                       ; do noting when user just pressed enter
+    +strCmpAddr .EXIT_COMMAND, .CMD_BUFFER
+    beq .done
+    jsr processCommand
+    jmp .cmdLoop
+.done
+    rts
+
+.CMD_COUNTER
+!byte 0
+.CMD_VECTOR
+!byte 0,0
+.NO_COMMAND
+!byte 0,0
+; --------------------------------------------------
+; processCommand
+; --------------------------------------------------
+processCommand
+    +load16BitImmediate .CMD_BUFFER, TEMP_PTR2
+
+    ldx #0
+    stx .CMD_COUNTER
+.testCommand
+    ldx .CMD_COUNTER
+    lda .CMD_TABLE,x
+    sta TEMP_PTR
+    inx
+    lda .CMD_TABLE,x
+    sta TEMP_PTR+1
+    +cmp16Bit .NO_COMMAND, TEMP_PTR
+    beq .notFound
+    txa
+    pha
+    jsr strCmp
+    bne .nextCommand
+    pla
+    tax
+    inx
+    lda .CMD_TABLE,X
+    sta .CMD_VECTOR
+    inx    
+    lda .CMD_TABLE,X
+    sta .CMD_VECTOR+1
+    jmp (.CMD_VECTOR)
+.nextCommand
+    pla
+    tax
+    inx
+    inx
+    inx
+    stx .CMD_COUNTER
+    jmp .testCommand 
+
+.notFound
+    +printStr .COMMAND_NOT_RECOGNIZED
+    jsr printCRLF
+    rts
+
+
+.TEST_STR
+!byte 6
+!tx "TEST"
+!byte $0d, $0a
+testCommand
+    +printStr .TEST_STR
+    rts
