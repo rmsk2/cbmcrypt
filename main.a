@@ -23,6 +23,9 @@ entryPoint
 !source "c128.a"
 }
 
+FAST_MUL = 1
+
+!source "arith16.a"
 
 main
     ldx #0
