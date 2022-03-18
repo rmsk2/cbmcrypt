@@ -6,7 +6,7 @@ all: cbmcrypt cbmcrypt.d64
 ifdef MAC
 ACME=../acme/acme
 C1541=/Applications/vice-gtk3-3.5/bin/c1541
-WORKDIR=/Users/martin/data/c64_mandelbrot
+WORKDIR=/Users/martin/data/cbmcrypt
 else
 ACME=acme
 C1541=c1541

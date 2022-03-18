@@ -15,45 +15,6 @@ TEMP_PTR2 = ZERO_PAGE_3
 LO_NIBBLE
 !byte 0
 
-; --------------------------------------------------
-; This routine prints a fixed point number to the screen. The address
-; of the number has to be given in $0003/$0004
-;
-; No other values are returned. 
-; --------------------------------------------------
-printNumHex
-    ldy #0
-    lda (TEMP_PTR), y
-    bne .printMinus
-    lda #32
-    jsr CHAROUT
-    jmp .egal
-.printMinus
-    lda #45
-    jsr CHAROUT
-.egal
-
-    ldy #4
-.loopPrint
-    lda (TEMP_PTR), y
-    jsr printByte
-    cpy #4                           
-    bne .continuePrint
-    lda #46                                  ; print decimal point after first byte
-    jsr CHAROUT
-.continuePrint
-    dey
-    bne .loopPrint
-    jsr printCRLF
-    rts
-
-!macro printFixedPoint .addr {
-    lda #<.addr
-    sta TEMP_PTR
-    lda #>.addr
-    sta TEMP_PTR+1
-    jsr printNumHex
-} 
 
 printByteCRLF
     jsr printByte
@@ -74,10 +35,6 @@ printByte
 printCRLF
     lda #13
     jsr CHAROUT
-!ifndef TARGET_128 {
-    lda #10
-    jsr CHAROUT
-}
     rts
 
 .CONV_TEMP

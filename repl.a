@@ -22,6 +22,10 @@ progStart
 !byte 1
 !tx "X"
 
+.HELP_COMMAND
+!byte 1
+!tx "H"
+
 .TEST_COMMAND
 !byte 3
 !tx "TST"
@@ -40,6 +44,7 @@ progStart
 
 
 .CMD_TABLE 
+!byte <.HELP_COMMAND, >.HELP_COMMAND, <helpCommand, >helpCommand
 !ifdef INCLUDE_DIAG {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -117,9 +122,40 @@ processCommand
 
 
 .TEST_STR
-!byte 6
+!byte 5
 !tx "TEST"
-!byte $0d, $0a
+!byte $0d
 testCommand
     +printStr .TEST_STR
+    rts
+
+
+; --------------------------------------------------
+; helpCommand
+; --------------------------------------------------
+helpCommand
+    ldx #0
+.commandLoop
+    lda .CMD_TABLE,x
+    sta TEMP_PTR
+    inx
+    lda .CMD_TABLE,x
+    sta TEMP_PTR+1
+    +cmp16Bit .NO_COMMAND, TEMP_PTR
+    beq .allPrinted
+    txa
+    pha
+    jsr printString
+    jsr printCRLF
+    pla
+    tax
+    inx
+    inx
+    inx
+    jmp .commandLoop 
+
+.allPrinted
+    lda #88                                 ; add X command to help, as it is built in
+    jsr CHAROUT
+    jsr printCRLF
     rts
