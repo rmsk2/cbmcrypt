@@ -1,0 +1,63 @@
+
+
+.VEC_ENCRYPT
+!byte <rc4Encrypt, >rc4Encrypt
+.VEC_DECRYPT
+!byte <rc4Decrypt, >rc4Decrypt
+.VEC_SET_KEY
+!byte <rc4SetKey, >rc4SetKey
+.VEC_GET_ID
+!byte <rc4GetId, >rc4GetId
+
+
+cryptoInit
+    rts
+
+
+MSG_IV_LEN = 5
+MSG_KEY_LEN = 16
+KEK_LEN = 16
+
+MSG_IV
+!byte MSG_IV_LEN
+!skip MSG_IV_LEN
+
+MSG_KEY
+!byte MSG_KEY_LEN
+!skip MSG_KEY_LEN
+
+KEK
+!byte KEK_LEN
+!skip KEK_LEN
+
+
+cryptoEncrypt
+    jmp (.VEC_ENCRYPT)
+
+
+cryptoDecrypt
+    jmp (.VEC_DECRYPT)
+
+
+cryptoSetKey
+    jmp (.VEC_SET_KEY)
+
+
+cryptoGetId
+    jmp (.VEC_GET_ID)
+
+
+rc4Encrypt
+    rts
+
+
+rc4Decrypt
+    rts
+
+
+rc4SetKey
+    rts
+
+
+rc4GetId
+    rts
