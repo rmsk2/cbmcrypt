@@ -74,8 +74,10 @@ printByte
 printCRLF
     lda #13
     jsr CHAROUT
+!ifndef TARGET_128 {
     lda #10
     jsr CHAROUT
+}
     rts
 
 .CONV_TEMP
