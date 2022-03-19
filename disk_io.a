@@ -301,11 +301,11 @@ readBlockFromBuffer
     +inc16Bit BLOCK_COUNTER
     jmp .readLoop
 
-    jsr CLRCHN                                    ; revert to default input and output channels
 .endReached
     lda #DISK_IO_OK
     rts
 .readDone
+    jsr CLRCHN                                    ; revert to default input and output channels
     +cmp16BitImmediate 256, BLOCK_COUNTER
     beq .endReached
     lda #DISK_IO_ERR
