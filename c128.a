@@ -1,3 +1,5 @@
+TARGET_C128 = 1
+
 ZERO_PAGE_1 = $A7
 ZERO_PAGE_2 = $A8
 

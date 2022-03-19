@@ -13,7 +13,8 @@ CHKIN = $FFC6
 READST = $FFB7
 CHRIN = $FFCF
 CHKOUT = $FFC9
-TMP_PTR = $03
+SETBNK = $FF68
+TMP_PTR = ZERO_PAGE_5
 
 ; Device number used for load and save
 DEVICE_NUM
@@ -352,6 +353,12 @@ openChannel
     lda .OPEN_FILE_NAME_LEN
 .setName
     jsr SETNAM
+
+!ifdef  TARGET_C128 {
+    lda #0                                     ; memory bank, here bank 0, for data 
+    ldx #0                                     ; memory bank, here bank 0, for file name
+    jsr SETBNK
+}
 
     lda .OPEN_FILE_NUM                         ; logical file number 15
     ldx .OPEN_DEVICE_NUM                       ; device number
