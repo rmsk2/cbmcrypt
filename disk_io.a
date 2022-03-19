@@ -238,7 +238,7 @@ readBlockCall
     jsr CLOSE
     lda #5
     jsr CLOSE
-    JSR CLRCHN
+    jsr CLRCHN
     lda .READ_BLOCK_ERR_TEMP
     sta DISK_ERROR
     rts
