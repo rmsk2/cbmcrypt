@@ -25,10 +25,22 @@ entryPoint
 
 FAST_MUL = 1
 
+!zone arith
 !source "arith16.a"
+
+!zone string
 !source "string.a"
+
+!zone diskio
+!source "disk_io.a"
+
+!zone repl
 !source "repl.a"
 
 main
+    lda #14
+    jsr CHAROUT
     jsr progStart
+    lda #142
+    jsr CHAROUT
     rts

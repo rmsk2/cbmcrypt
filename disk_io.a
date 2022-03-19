@@ -1,0 +1,372 @@
+
+
+DISK_IO_OK = 0
+DISK_IO_ERR = 1
+SETNAM = $FFBD
+SETLFS = $FFBA
+OPEN = $FFC0
+LOAD = $FFD5
+CLOSE = $FFC3
+CLRCHN = $FFCC
+SAVE = $FFD8
+CHKIN = $FFC6
+READST = $FFB7
+CHRIN = $FFCF
+CHKOUT = $FFC9
+TMP_PTR = $03
+
+; Device number used for load and save
+DEVICE_NUM
+!byte 8
+
+; Contains error number of disk operation
+DISK_ERROR
+!byte 0
+
+
+!macro openChannelNoFileName .fileNum, .addrDeviceNum, .secondaryAddress {
+    ldx .addrDeviceNum
+    ldy #.secondaryAddress
+    +load16BitImmediate OPEN_FILE_NAME_EMPTY, TEMP_PTR
+    lda #.fileNum
+    jsr openChannel
+}
+
+
+!macro openChannel .fileNum, .addrDeviceNum, .secondaryAddress, .addrFileName {
+    ldx .addrDeviceNum
+    ldy #.secondaryAddress
+    +load16BitImmediate .addrFileName, TEMP_PTR
+    lda #.fileNum
+    jsr openChannel
+}
+
+
+ERR_BYTE_COUNTER
+!byte $00
+ERROR_MSG_BUFFER
+!byte $00, $00, $00, $00, $00, $00, $00, $00
+!byte $00, $00, $00, $00, $00, $00, $00, $00
+!byte $00, $00, $00, $00, $00, $00, $00, $00
+!byte $00, $00, $00, $00, $00, $00, $00, $00
+; --------------------------------------------------
+; readErrorChannel Reads the current drive status. This can lock up
+; if device DEVICE_NUM is not present
+; 
+; INPUT:  None
+; OUTPUT: error code in accu.
+; --------------------------------------------------
+readErrorChannel
+    ; reset previous error
+    lda #DISK_IO_OK
+    sta DISK_ERROR
+
+    ; set error code to "00", ie OK
+    lda #48
+    sta ERROR_MSG_BUFFER
+    sta ERROR_MSG_BUFFER + 1
+
+    ; open 15,DEVICE_NUM,15
+    +openChannelNoFileName 15, DEVICE_NUM, 15
+    bcs .checkError                   ; open failed
+
+    ldx #15
+    jsr CHKIN                         ; use file 15 as input
+
+    lda #0
+    sta ERR_BYTE_COUNTER             ; set buffer index to 0
+.loopErrorChannel
+    jsr READST                        ; read status word
+    bne .close                        ; test for eof/error
+    jsr CHRIN                         ; read character from error channel
+    ldx ERR_BYTE_COUNTER
+    cpx #32                           ; have we exhausted the buffer size?
+    beq .loopErrorChannel             ; yes => do not store the received byte, but continue to read in order to drain error channel
+    sta ERROR_MSG_BUFFER, X           ; there is room left in the buffer => store byte
+    inx                               ; advance index to next storage location
+    stx ERR_BYTE_COUNTER
+    jmp .loopErrorChannel             ; read next byte
+
+.close 
+    lda #15                           
+    jsr CLOSE                         ; close file 15
+.endWithoutClose                       
+    jsr CLRCHN                        ; restore default input and output channels
+
+    rts
+.checkError
+    ; room for additional error handling
+    lda #DISK_IO_ERR
+    sta DISK_ERROR
+    jmp .endWithoutClose              
+
+
+; --------------------------------------------------
+; readAndevalErrorChannel Reads the current drive status and evaluates the
+; returned message. This can lock up if device DEVICE_NUM is not present.
+; 
+; INPUT:  None
+; OUTPUT: error code in accu. This value is also saved in DISK_ERROR.
+; --------------------------------------------------
+readAndEvalErrorChannel
+    jsr readErrorChannel
+    lda DISK_ERROR
+    bne .doneEvalErr
+    lda #<ERROR_MSG_BUFFER
+    sta TMP_PTR
+    lda #>ERROR_MSG_BUFFER
+    sta TMP_PTR+1
+    jsr asciiToByte
+    sta DISK_ERROR
+    rts
+.doneEvalErr
+    ; truncate error message string as it may be corrupt
+    lda #0
+    sta ERR_BYTE_COUNTER
+
+    rts
+
+
+.ERR_CODE_CONV_HELP
+!byte $00
+; --------------------------------------------------
+; asciiToByte converts the two digit string referenced via TMP_PTR 
+; to a numeric value that is stored in the accu
+; 
+; INPUT:  TMP_PTR is set to buffer
+; OUTPUT: Numeric value in accu
+; --------------------------------------------------
+asciiToByte
+    ldy #0
+    lda (TMP_PTR), y
+    sec
+    sbc #48
+    tax                              ; save value of first char
+    asl
+    asl              
+    asl                              ; accu = accu * 8
+    sta .ERR_CODE_CONV_HELP
+    txa                              ; restore original value
+    asl                              ; accu = accu * 2 
+    clc
+    adc .ERR_CODE_CONV_HELP          ; accu now contains value of first digit
+    sta .ERR_CODE_CONV_HELP          ; store original_value * 8 + original_value * 2 = original_value * 10 
+    iny
+    lda (TMP_PTR), y
+    sec
+    sbc #48                          ; add value of second digit
+    clc
+    adc .ERR_CODE_CONV_HELP
+    clc
+
+    rts
+
+
+BLOCK_BUFFER
+!skip 256
+
+.TEMP_TRACK
+!byte 0
+.TEMP_SECTOR
+!byte 0
+.CMD_BUFFER
+!byte 32
+!byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 
+!byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.CMD_HELP
+!byte 32
+!byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 
+!byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.CMD_BUFFER_READ
+!byte 8
+!pet "u1: 3 0 "                                  ; The 3 is the secondary address of the data channel
+.FILE_NAME_ANY_FREE_BUFFER
+!byte 1
+!pet "#"
+.ONE_SPACE
+!byte 1
+!tx " "
+.RESET_BLOCK_POINTER
+!byte 9
+!pet "b-p: 3 0"                                  ; The 3 is the secondary address of the data channel
+!byte $0d
+.READ_BLOCK_ERR_TEMP                            
+!byte 0
+.CRLF_TXT
+!byte 1
+!byte $0d
+; --------------------------------------------------
+; This routine reads the block identified by track in X register and
+; sector in y register into the buffer BLOCK_BUFFER.
+; 
+; This routine returns DISK_IO_OK in accu if everything went OK.
+; --------------------------------------------------
+readBlockCall
+    stx .TEMP_TRACK
+    sty .TEMP_SECTOR
+    ; OPEN 5,8,15
+    +openChannelNoFileName 5, DEVICE_NUM, 15
+    bcc .openCommandChannelOK
+    jmp .errorOpenCommandChannel
+.openCommandChannelOK
+    ; OPEN 4,8,3,"#"
+    +openChannel 4, DEVICE_NUM, 3, .FILE_NAME_ANY_FREE_BUFFER
+    bcc .openDataChannelOk
+    jmp .errorOpenDataChannel
+.openDataChannelOk
+    ; PRINT#5,"U1:";3;0;track;sector
+    lda #0
+    sta .CMD_BUFFER
+    +strCpy .CMD_BUFFER_READ, .CMD_BUFFER
+    +itoa .TEMP_TRACK, .CMD_HELP
+    +strCat .CMD_HELP, .CMD_BUFFER
+    +strCat .ONE_SPACE, .CMD_BUFFER
+    +itoa .TEMP_SECTOR, .CMD_HELP
+    +strCat .CMD_HELP, .CMD_BUFFER
+    +strCat .CRLF_TXT, .CMD_BUFFER
+    +writeStrToChannel 5, .CMD_BUFFER
+
+    ;PRINT#5,"B-P:";3;0
+    +writeStrToChannel 5, .RESET_BLOCK_POINTER
+
+    ; read full block from file #4
+    ldx #4
+    jsr readBlockFromBuffer
+    sta .READ_BLOCK_ERR_TEMP
+.closeAllChannels
+    lda #4
+    jsr CLOSE
+    lda #5
+    jsr CLOSE
+    JSR CLRCHN
+    lda .READ_BLOCK_ERR_TEMP
+    sta DISK_ERROR
+    rts
+.errorOpenDataChannel
+    lda #5
+    jsr CLOSE               ; close already opened command channel
+.errorOpenCommandChannel
+    lda #DISK_IO_ERR
+    sta DISK_ERROR
+    rts
+
+; --------------------------------------------------
+; This routine reads the block identified by track in X register and
+; sector in y register into the buffer BLOCK_BUFFER.
+; 
+; This routine returns DISK_IO_OK in accu if everything went OK.
+; --------------------------------------------------
+readBlockWithErrorChannel
+    jsr readBlockCall
+    lda DISK_ERROR
+    cmp #DISK_IO_OK
+    bne .readErrorChannel
+    rts
+.readErrorChannel
+    jsr readAndEvalErrorChannel
+    lda DISK_ERROR
+    rts
+
+!macro readBlockImmediate .track, .sector {
+    ldx #.track
+    ldy #.sector
+    jsr readBlockWithErrorChannel
+}
+
+
+!macro readBlock .addrTrack, .addrSector {
+    ldx .addrTrack
+    ldy .addrSector
+    jsr readBlockWithErrorChannel
+}
+
+
+BLOCK_COUNTER
+!byte 0,0
+; --------------------------------------------------
+; read a 256 byte block from the floppy on channel specified in X register 
+;
+; return DISK_OK_OK in accu if everything is OK
+; --------------------------------------------------
+readBlockFromBuffer
+    jsr CHKIN
+    +load16BitImmediate 0, BLOCK_COUNTER
+
+.readLoop
+    jsr READST                                    ; end reached or error?
+    bne .readDone
+    jsr CHRIN                                     ; read one byte
+    ldx BLOCK_COUNTER
+    sta BLOCK_BUFFER, x                           ; store byte in buffer
+    +inc16Bit BLOCK_COUNTER
+    jmp .readLoop
+
+    jsr CLRCHN                                    ; revert to default input and output channels
+.endReached
+    lda #DISK_IO_OK
+    rts
+.readDone
+    +cmp16BitImmediate 256, BLOCK_COUNTER
+    beq .endReached
+    lda #DISK_IO_ERR
+    rts
+
+OPEN_FILE_NAME_EMPTY
+!byte 0
+.OPEN_FILE_NUM
+!byte 0
+.OPEN_DEVICE_NUM
+!byte 0
+.OPEN_SECONDARY_ADDRESS
+!byte 0
+.OPEN_FILE_NAME_HELP
+!byte 0,0
+.OPEN_FILE_NAME_LEN
+!byte 0
+; --------------------------------------------------
+; open a channel with the number given in accu for the device specified in X
+; and the secondary address in given in Y. TEMP_PTR has to reference the file name.
+; If the string referenced by TEMP_PTR is empty no file name is used.  
+;
+; If carry is clear everything went OK
+; --------------------------------------------------
+openChannel
+    sta .OPEN_FILE_NUM
+    stx .OPEN_DEVICE_NUM
+    sty .OPEN_SECONDARY_ADDRESS
+
+    ; load file name length
+    ldy #0
+    lda (TEMP_PTR), Y
+    bne .fileNameNonZero
+    lda #0                            ; no file name
+    ldx #0
+    ldy #0
+    jmp .setName
+.fileNameNonZero
+    sta .OPEN_FILE_NAME_LEN
+    +move16Bit TEMP_PTR, .OPEN_FILE_NAME_HELP
+    +inc16Bit .OPEN_FILE_NAME_HELP
+    ldx .OPEN_FILE_NAME_HELP
+    ldy .OPEN_FILE_NAME_HELP+1
+    lda .OPEN_FILE_NAME_LEN
+.setName
+    jsr SETNAM
+
+    lda .OPEN_FILE_NUM                         ; logical file number 15
+    ldx .OPEN_DEVICE_NUM                       ; device number
+    ldy .OPEN_SECONDARY_ADDRESS                ; secondary address 15
+    jsr SETLFS
+
+    jsr OPEN                                   ; open channel
+    php
+    bcs .errorOpen
+    plp
+    rts
+.errorOpen
+    lda .OPEN_FILE_NUM                           
+    jsr CLOSE                                  ; close file even if open failed
+    plp                                        ; restore status register
+    rts
+
+

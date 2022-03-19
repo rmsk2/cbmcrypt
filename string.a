@@ -71,6 +71,8 @@ waitForKey
     cmp #0            ; if 0, no key pressed
     beq waitForKey    ; loop if no key pressed
 
+    ;jsr printByte
+
     rts               ; ASCII Code of pressed key is now in accumulator
 
 
@@ -228,7 +230,7 @@ getString
     iny 
     cpy .LEN_ALLOWED               
     bne .checkLoop                 ; try next character
-    ldy #1                         ; typed character is nit allowed => zero flag is clear when routine returns
+    ldy #1                         ; typed character is not allowed => zero flag is clear when routine returns
 .found
     rts
 

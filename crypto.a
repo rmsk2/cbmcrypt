@@ -15,20 +15,15 @@ cryptoInit
 
 
 MSG_IV_LEN = 5
-MSG_KEY_LEN = 16
-KEK_LEN = 16
+MAX_DAY_KEY_LEN = 24
 
 MSG_IV
 !byte MSG_IV_LEN
 !skip MSG_IV_LEN
 
-MSG_KEY
-!byte MSG_KEY_LEN
-!skip MSG_KEY_LEN
-
-KEK
-!byte KEK_LEN
-!skip KEK_LEN
+DAY_KEY
+!byte MAX_DAY_KEY_LEN
+!skip MAX_DAY_KEY_LEN
 
 
 cryptoEncrypt

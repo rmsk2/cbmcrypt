@@ -8,11 +8,11 @@ progStart
 
 .COMMAND
 !byte 5
-!tx "CMD> "
+!pet "cmd> "
 
 .CMD_CHARS
-!byte 26
-!tx "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+!byte 52
+!pet "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 .CMD_BUFFER
 !byte CMD_LEN
@@ -20,31 +20,38 @@ progStart
 
 .EXIT_COMMAND
 !byte 1
-!tx "X"
+!pet "x"
 
 .HELP_COMMAND
 !byte 1
-!tx "H"
+!pet "h"
 
 .TEST_COMMAND
 !byte 3
-!tx "TST"
+!pet "tst"
+
+.DIR_COMMAND
+!byte 3
+!pet "dir"
 
 .COMMAND_NOT_RECOGNIZED
 !byte 22
-!tx "COMMAND NOT RECOGNIZED"
+!pet "command not recognized"
 
 .ALPHA
-!byte 50
-!tx "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:-+#=() §$%&@"
+!byte 76
+!pet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:-+#=() §$%&@"
+!pet "abcdefghijklmnopqrstuvwxyz"
+
 
 .DIGITS
 !byte 10
-!tx "0123456789"
+!pet "0123456789"
 
 
 .CMD_TABLE 
 !byte <.HELP_COMMAND, >.HELP_COMMAND, <helpCommand, >helpCommand
+!byte <.DIR_COMMAND, >.DIR_COMMAND, <dirCommand, >dirCommand
 !ifdef INCLUDE_DIAG {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -123,7 +130,7 @@ processCommand
 
 .TEST_STR
 !byte 5
-!tx "TEST"
+!pet "test"
 !byte $0d
 testCommand
     +printStr .TEST_STR
@@ -157,5 +164,209 @@ helpCommand
 .allPrinted
     lda #88                                 ; add X command to help, as it is built in
     jsr CHAROUT
+    jsr printCRLF
+    rts
+
+
+
+.CURRENT_POS_OFFSET
+!byte 0
+.MAX_POS_OFFSET
+!byte 0
+; --------------------------------------------------
+; printDataOffset prints as many bytes as indicated by the X register 
+; from the memory address to which TEMP_PTR points
+; 
+; INPUT:  X contains length, TEMP_PTR points to the data 
+; OUTPUT: None
+; --------------------------------------------------
+printDataOffset
+    stx .MAX_POS_OFFSET
+    lda #0
+    sta .CURRENT_POS_OFFSET
+.printOffsetLoop
+    ldy .CURRENT_POS_OFFSET
+    cpy .MAX_POS_OFFSET
+    beq .donePrintOffset
+    lda (TEMP_PTR),y
+    jsr CHAROUT 
+    inc .CURRENT_POS_OFFSET
+    jmp .printOffsetLoop
+.donePrintOffset
+    rts
+
+
+!macro printOffset .addr, .length {
+    +load16BitImmediate .addr, TEMP_PTR
+    ldx #.length
+    jsr printDataOffset
+}
+
+!macro printOffsetMem .addr, .length {
+    +move16Bit .addr, TEMP_PTR
+    ldx #.length
+    jsr printDataOffset
+}
+
+.IO_ERROR_TXT
+!byte 9
+!pet "io error"
+!byte $0d
+
+.FILE_TYPE_SEQ_TXT
+!byte 3
+!pet "seq"
+.FILE_TYPE_PRG_TXT
+!byte 3
+!pet "prg"
+.FILE_TYPE_USR_TXT
+!byte 3
+!pet "usr"
+.FILE_TYPE_REL_TXT
+!byte 3
+!pet "rel"
+.FILE_TYPE_CBM_TXT
+!byte 3
+!pet "cbm"
+
+.FILE_EXT_TAB
+!byte <.FILE_TYPE_SEQ_TXT, >.FILE_TYPE_SEQ_TXT
+!byte <.FILE_TYPE_PRG_TXT, >.FILE_TYPE_PRG_TXT
+!byte <.FILE_TYPE_USR_TXT, >.FILE_TYPE_USR_TXT
+!byte <.FILE_TYPE_REL_TXT, >.FILE_TYPE_REL_TXT
+!byte <.FILE_TYPE_CBM_TXT, >.FILE_TYPE_CBM_TXT
+
+.SPACER
+!byte 2
+!tx "  "
+.DIR_ENTRY_LEN
+!byte 32, 0
+.CURRENT_OFFSET
+!byte 0, 0
+.ENTRY_COUNTER
+!byte 0
+.ENTRY_ADDRESS
+!byte 0,0
+.FILE_TYPE
+!byte 0
+; --------------------------------------------------
+; printDirectoryEntries prints all the directory entries currently
+; stored at BLOCK_BUFFER
+; --------------------------------------------------
+printDirectoryEntries
+    lda #0
+    sta .ENTRY_COUNTER
+    +load16BitImmediate 2, .CURRENT_OFFSET
+.nextDirEntry
+    lda .ENTRY_COUNTER
+    cmp #8
+    bne .continuePrintEntry
+    jmp .donePrintEntries
+.continuePrintEntry    
+    +load16BitImmediate BLOCK_BUFFER, .ENTRY_ADDRESS
+    +add16Bit .CURRENT_OFFSET, .ENTRY_ADDRESS
+    ; determine file type    
+    +move16Bit .ENTRY_ADDRESS, TEMP_PTR
+    ldy #0
+    lda (TEMP_PTR), y
+    and #%00000111                                             ; file type is in the lower three bits
+    beq .deletedEntry                                          ; file type = 0 => deleted entry
+    tay
+    dey
+    sty .FILE_TYPE                                             ; store determined file type                                         
+    ; print file name
+    +printStr .SPACER
+    +add16BitImmediate 3, .ENTRY_ADDRESS
+    +printOffsetMem .ENTRY_ADDRESS, 16                         ; print file name
+    lda #32
+    jsr CHAROUT
+    ; load file extension to print
+    lda .FILE_TYPE
+    asl
+    tay
+    lda .FILE_EXT_TAB,y
+    sta TEMP_PTR
+    iny
+    lda .FILE_EXT_TAB,y
+    sta TEMP_PTR+1
+    jsr printString
+
+    jsr printCRLF
+.deletedEntry
+    inc .ENTRY_COUNTER
+    +add16Bit .DIR_ENTRY_LEN, .CURRENT_OFFSET
+    jmp .nextDirEntry
+.donePrintEntries
+    rts
+
+.TXT_FREE_BLOCKS
+!byte 14
+!pet "free blocks: $"
+.NEXT_TRACK
+!byte 0
+.NEXT_SECTOR
+!byte 0
+.FREE_BLOCKS
+!byte 0, 0
+.FREE_BLOCKS_IN_TRACK
+!byte 0, 0
+; --------------------------------------------------
+; dirCommand
+; --------------------------------------------------
+dirCommand
+    +load16BitImmediate 0, .FREE_BLOCKS
+    +readBlockImmediate 18,0
+    cmp #DISK_IO_OK
+    beq .continueDirCommand
+    jmp .printDiskError
+.continueDirCommand
+    ; print disk name
+    +printOffset BLOCK_BUFFER+144, 16
+    jsr printCRLF
+
+    ; calculate number of free blocks on disk
+    ldy #4
+.addNextBlocks
+    lda BLOCK_BUFFER, y
+    sta .FREE_BLOCKS_IN_TRACK
+    +add16Bit .FREE_BLOCKS_IN_TRACK, .FREE_BLOCKS
+    iny
+    iny
+    iny
+    iny
+    cpy #144
+    bne .addNextBlocks
+
+    ldy #18*4
+    lda BLOCK_BUFFER, y
+    sta .FREE_BLOCKS_IN_TRACK
+    +sub16Bit .FREE_BLOCKS_IN_TRACK, .FREE_BLOCKS             ; subtract the free blocks of track 18
+
+.loopDirectoryBlocks
+    ; test for last block
+    +cmp16BitImmediate $FF00, BLOCK_BUFFER
+    beq .dirFinish
+
+    ; read next block of directory
+    +readBlock BLOCK_BUFFER, BLOCK_BUFFER+1
+    cmp #DISK_IO_OK
+    bne .printDiskError
+
+    ; print entries contained in currently loaded sector
+    jsr printDirectoryEntries
+    jmp .loopDirectoryBlocks
+
+.dirFinish
+    ; print number of free blocks
+    +printStr .TXT_FREE_BLOCKS
+    lda .FREE_BLOCKS+1
+    jsr printByte
+    lda .FREE_BLOCKS
+    jsr printByteCRLF
+
+    rts
+.printDiskError
+    +printStr .IO_ERROR_TXT
+    +printStr ERR_BYTE_COUNTER
     jsr printCRLF
     rts

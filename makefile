@@ -34,7 +34,7 @@ clean:
 	rm cbmcrypt.d64
 	rm cbmcrypt.txt
 
-cbmcrypt: $(PLATFORM_FILES) main.a arith16.a string.a repl.a crypto.a
+cbmcrypt: $(PLATFORM_FILES) main.a arith16.a string.a repl.a crypto.a disk_io.a
 	$(ACME) -D$(PLATFORM)=1 -l cbmcrypt.txt main.a
 
 cbmcrypt.d64: cbmcrypt
