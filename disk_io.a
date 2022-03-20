@@ -306,6 +306,7 @@ readBlockWithErrorChannel
     jmp .readLoopM
 
 .endReachedM
+    jsr CLRCHN
     lda #DISK_IO_OK
     jmp .endReadDataM
 .readErrorRestoreStack
@@ -359,7 +360,6 @@ readBlockFromBuffer
     +load16BitImmediate BLOCK_BUFFER, ZERO_PAGE_7
     +readDataRaw BLOCK_LEN, BLOCK_COUNTER, ZERO_PAGE_7
     rts
-
 
 
 WBUFFER_LEN
