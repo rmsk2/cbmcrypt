@@ -280,37 +280,117 @@ readBlockWithErrorChannel
     ldy .addrSector
     jsr readBlockWithErrorChannel
 }
+; --------------------------------------------------
+; X has to contain file number
+; .addrPtr has to point to input buffer
+;  --------------------------------------------------
+!macro readDataRaw .addrBufferLen, .addrBufferCounter, .addrPtr {
+    +load16BitImmediate 0, .addrBufferCounter
+    jsr CHKIN
+    bcs .readError
 
+.readLoopM
+    +cmp16Bit .addrBufferLen, .addrBufferCounter
+    beq .endReachedM
+
+    jsr CHRIN                                      ; read one byte
+    bcs .readError
+    pha
+    jsr READST                                     ; end reached or error?
+    bne .readErrorRestoreStack
+    pla
+    ldy #0
+    sta (.addrPtr), y                              ; store byte in buffer
+    +inc16Bit .addrBufferCounter
+    +inc16Bit .addrPtr
+    jmp .readLoopM
+
+.endReachedM
+    lda #DISK_IO_OK
+    jmp .endReadDataM
+.readErrorRestoreStack
+    pla
+.readError
+    jsr CLRCHN                                    ; revert to default input and output channels
+    lda #DISK_IO_ERR
+.endReadDataM  
+}
+
+; --------------------------------------------------
+; X has to contain file number
+; .addrPtr has to point to output buffer
+;  --------------------------------------------------
+!macro writeDataRaw .addrBufferLen, .addrBufferCounter, .addrPtr {
+    +load16BitImmediate 0, .addrBufferCounter      ; clear output counter
+    jsr CHKOUT                                     ; use .chan as output channel
+    bcs .errorWrite
+
+.loopWrite
+    +cmp16Bit .addrBufferLen, .addrBufferCounter
+    beq .writeDataDone
+    ldy #0
+    lda (.addrPtr), y
+    jsr CHAROUT
+    bcs .errorWrite
+    +inc16Bit .addrBufferCounter
+    +inc16Bit .addrPtr
+    jmp .loopWrite
+
+.errorWrite
+    jsr CLRCHN
+    lda #DISK_IO_ERR
+    jmp .writeFinished
+.writeDataDone    
+    jsr CLRCHN
+    lda #DISK_IO_OK 
+.writeFinished
+}
 
 BLOCK_COUNTER
 !byte 0,0
+BLOCK_LEN
+!byte 0,1                                ; length is 256 = $0100 bytes
 ; --------------------------------------------------
 ; read a 256 byte block from the floppy on channel specified in X register 
 ;
 ; return DISK_OK_OK in accu if everything is OK
 ; --------------------------------------------------
-readBlockFromBuffer
-    jsr CHKIN
-    +load16BitImmediate 0, BLOCK_COUNTER
-
-.readLoop
-    jsr READST                                    ; end reached or error?
-    bne .readDone
-    jsr CHRIN                                     ; read one byte
-    ldx BLOCK_COUNTER
-    sta BLOCK_BUFFER, x                           ; store byte in buffer
-    +inc16Bit BLOCK_COUNTER
-    jmp .readLoop
-
-.endReached
-    lda #DISK_IO_OK
+readBlockFromBuffer 
+    +load16BitImmediate BLOCK_BUFFER, ZERO_PAGE_7
+    +readDataRaw BLOCK_LEN, BLOCK_COUNTER, ZERO_PAGE_7
     rts
-.readDone
-    jsr CLRCHN                                    ; revert to default input and output channels
-    +cmp16BitImmediate 256, BLOCK_COUNTER
-    beq .endReached
-    lda #DISK_IO_ERR
+
+
+
+WBUFFER_LEN
+!byte 0,0
+WBUFFER_COUNTER                           ; counter used for output
+!byte 0,0
+; --------------------------------------------------
+; write a data buffer of length BUFFER_LEN pointed to by ZERO_PAGE_7
+; to the file number contained in X register
+;
+; return DISK_OK_OK in accu if everything is OK
+; --------------------------------------------------
+writeBuffer
+    +writeDataRaw WBUFFER_LEN, WBUFFER_COUNTER, ZERO_PAGE_7
     rts
+
+
+RBUFFER_LEN
+!byte 0,0
+RBUFFER_COUNTER                          ; counter used for input
+!byte 0,0
+; --------------------------------------------------
+; read data into a data buffer pointed to by ZERO_PAGE_7 of length RBUFFER_LEN 
+; from the file number contained in X register
+;
+; return DISK_OK_OK in accu if everything is OK
+; --------------------------------------------------
+readBuffer
+    +readDataRaw RBUFFER_LEN, RBUFFER_COUNTER, ZERO_PAGE_7
+    rts
+
 
 OPEN_FILE_NAME_EMPTY
 !byte 0
@@ -375,5 +455,4 @@ openChannel
     jsr CLOSE                                  ; close file even if open failed
     plp                                        ; restore status register
     rts
-
 
