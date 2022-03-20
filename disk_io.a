@@ -368,7 +368,7 @@ WBUFFER_COUNTER                           ; counter used for output
 !byte 0,0
 ; --------------------------------------------------
 ; write a data buffer of length BUFFER_LEN pointed to by ZERO_PAGE_7
-; to the file number contained in X register
+; to the file number contained in X register. Exactly WBUFFER_LEN bytes are written.
 ;
 ; return DISK_OK_OK in accu if everything is OK
 ; --------------------------------------------------
@@ -383,7 +383,7 @@ RBUFFER_COUNTER                          ; counter used for input
 !byte 0,0
 ; --------------------------------------------------
 ; read data into a data buffer pointed to by ZERO_PAGE_7 of length RBUFFER_LEN 
-; from the file number contained in X register
+; from the file number contained in X register. Exactly RBUFFER_LEN bytes are read.
 ;
 ; return DISK_OK_OK in accu if everything is OK
 ; --------------------------------------------------
