@@ -34,6 +34,15 @@ progStart
 !byte 3
 !pet "dir"
 
+.DEV_COMMAND
+!byte 3
+!pet "dev"
+
+.STATE_COMMAND
+!byte 3
+!pet "ste"
+
+
 .COMMAND_NOT_RECOGNIZED
 !byte 22
 !pet "command not recognized"
@@ -52,6 +61,8 @@ progStart
 .CMD_TABLE 
 !byte <.HELP_COMMAND, >.HELP_COMMAND, <helpCommand, >helpCommand
 !byte <.DIR_COMMAND, >.DIR_COMMAND, <dirCommand, >dirCommand
+!byte <.DEV_COMMAND, >.DEV_COMMAND, <setDeviceNumberCommand, >setDeviceNumberCommand
+!byte <.STATE_COMMAND, >.STATE_COMMAND, <stateCommand, >stateCommand
 !ifdef INCLUDE_DIAG {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -236,9 +247,15 @@ printDataOffset
 !byte <.FILE_TYPE_REL_TXT, >.FILE_TYPE_REL_TXT
 !byte <.FILE_TYPE_CBM_TXT, >.FILE_TYPE_CBM_TXT
 
+!ifdef TARGET_VIC20 {
+.SPACER
+!byte 1
+!tx " "
+} else {
 .SPACER
 !byte 2
 !tx "  "
+}
 .DIR_ENTRY_LEN
 !byte 32, 0
 .CURRENT_OFFSET
@@ -368,5 +385,69 @@ dirCommand
 .printDiskError
     +printStr .IO_ERROR_TXT
     +printStr ERR_BYTE_COUNTER
+    jsr printCRLF
+    rts
+
+
+; --------------------------------------------------
+; dirCommand
+; --------------------------------------------------
+stateCommand
+    +printStr .TXT_DEVICE_NUMBER
+    lda DEVICE_NUM
+    jsr printByteCRLF
+
+    rts
+
+
+.ERR_OUT_OF_RANGE
+!byte 18
+!pet "value out of range"
+.ERR_NO_CONVERT
+!byte 15
+!pet "can not convert"
+
+
+.TXT_DEVICE_NUMBER_INPUT
+!byte 15
+!pet "device number: "
+.TXT_DEVICE_NUMBER
+!byte 16
+!pet "device number: $"
+.DEV_NUM_BUFFER
+!byte 2
+!byte 0,0
+.NEW_DEV_NUM
+!byte 0,0
+
+; --------------------------------------------------
+; setDeviceNumberCommand
+; --------------------------------------------------
+setDeviceNumberCommand
+    ; set size of input buffer
+    lda #2
+    sta .DEV_NUM_BUFFER
+    ; read new device number and store it in .NEW_DEV_NUM
+    +printStr .TXT_DEVICE_NUMBER_INPUT
+    +inputStr .DEV_NUM_BUFFER, .DIGITS
+    +atoi .DEV_NUM_BUFFER, .NEW_DEV_NUM
+    bne .convErrDevNum
+    lda .NEW_DEV_NUM                             ; allowed device numbers are 8-11
+    cmp #12                                      
+    bcs .errOutOfRangeDevNum                     ; device number is >= 12 => Error out of range
+    cmp #8                      
+    bcc .errOutOfRangeDevNum                     ; device number < 8 => Error out of range
+    sta DEVICE_NUM                               ; store new device number
+    jsr printCRLF
+    rts
+
+.convErrDevNum
+    jsr printCRLF
+    +printStr .ERR_NO_CONVERT
+    jsr printCRLF
+    rts
+.errOutOfRangeDevNum
+    jsr printCRLF
+    +printStr .ERR_OUT_OF_RANGE
     jsr printCRLF
     rts

@@ -1,3 +1,5 @@
+TARGET_VIC20 = 1
+
 ZERO_PAGE_1 = $A7
 ZERO_PAGE_2 = $A8
 
