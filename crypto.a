@@ -1,13 +1,13 @@
 
 
 .VEC_ENCRYPT
-!byte <rc4Encrypt, >rc4Encrypt
+!byte <chacha20Encrypt, >chacha20Encrypt
 .VEC_DECRYPT
-!byte <rc4Decrypt, >rc4Decrypt
+!byte <chacha20Decrypt, >chacha20Decrypt
 .VEC_SET_KEY
-!byte <rc4SetKey, >rc4SetKey
+!byte <chacha20SetKey, >chacha20SetKey
 .VEC_GET_ID
-!byte <rc4GetId, >rc4GetId
+!byte <chacha20GetId, >chacha20GetId
 
 
 cryptoInit
@@ -42,17 +42,17 @@ cryptoGetId
     jmp (.VEC_GET_ID)
 
 
-rc4Encrypt
+chacha20Encrypt
     rts
 
 
-rc4Decrypt
+chacha20Decrypt
     rts
 
 
-rc4SetKey
+chacha20SetKey
     rts
 
 
-rc4GetId
+chacha20GetId
     rts
