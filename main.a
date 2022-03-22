@@ -34,6 +34,9 @@ FAST_MUL = 1
 !zone diskio
 !source "disk_io.a"
 
+!zone crypto
+!source "crypto.a"
+
 !zone repl
 !source "repl.a"
 

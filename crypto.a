@@ -1,58 +1,298 @@
-
-
-.VEC_ENCRYPT
-!byte <chacha20Encrypt, >chacha20Encrypt
-.VEC_DECRYPT
-!byte <chacha20Decrypt, >chacha20Decrypt
-.VEC_SET_KEY
-!byte <chacha20SetKey, >chacha20SetKey
-.VEC_GET_ID
-!byte <chacha20GetId, >chacha20GetId
+ALGO_CHACHA20 = 1
 
 
 cryptoInit
     rts
 
 
-MSG_IV_LEN = 5
-MAX_DAY_KEY_LEN = 24
+; --------------------------------------------------
+; Add the 32 bit values pointed to by ZERO_PAGE_1 and ZERO_PAGE_3
+; and store the result in ZERO_PAGE_3 
+;
+; op3 <- op1 + op3
+; --------------------------------------------------
+add32BitUnsigned
+    ldy #0
+    clc
+    lda (ZERO_PAGE_1),y
+    adc (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y
+    iny
+    lda (ZERO_PAGE_1),y
+    adc (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y    
+    iny
+    lda (ZERO_PAGE_1),y
+    adc (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y    
+    iny
+    lda (ZERO_PAGE_1),y
+    adc (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y    
 
-MSG_IV
-!byte MSG_IV_LEN
-!skip MSG_IV_LEN
-
-DAY_KEY
-!byte MAX_DAY_KEY_LEN
-!skip MAX_DAY_KEY_LEN
-
-
-cryptoEncrypt
-    jmp (.VEC_ENCRYPT)
-
-
-cryptoDecrypt
-    jmp (.VEC_DECRYPT)
-
-
-cryptoSetKey
-    jmp (.VEC_SET_KEY)
-
-
-cryptoGetId
-    jmp (.VEC_GET_ID)
-
-
-chacha20Encrypt
     rts
 
 
-chacha20Decrypt
+; --------------------------------------------------
+; XOR the 32 bit values pointed to by ZERO_PAGE_1 and ZERO_PAGE_3
+; and store the result in ZERO_PAGE_3 
+;
+; op3 <- op1 xor op3
+; --------------------------------------------------
+xor32BitUnsigned
+    ldy #0
+    lda (ZERO_PAGE_1),y
+    eor (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y
+    iny
+    lda (ZERO_PAGE_1),y
+    eor (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y    
+    iny
+    lda (ZERO_PAGE_1),y
+    eor (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y    
+    iny
+    lda (ZERO_PAGE_1),y
+    eor (ZERO_PAGE_3),y
+    sta (ZERO_PAGE_3),y    
+
+    rts
+
+; --------------------------------------------------
+; move 32 bit values pointed to by ZERO_PAGE_1 to addres to which ZERO_PAGE_3
+; points. 
+; 
+; op3 <- op1
+; --------------------------------------------------
+move32Bit
+    ldy #3
+.loopMove
+    lda (ZERO_PAGE_1),y
+    sta (ZERO_PAGE_3),y
+    dey
+    bpl .loopMove
+
     rts
 
 
-chacha20SetKey
+; --------------------------------------------------
+; rot32Bit rotates the 32 bit value to which ZERO_PAGE_1 points one bit
+; to the left.
+;
+; op1 <- op1 <<< 1
+; --------------------------------------------------
+rot32Bit
+    ldy #0
+    lda (ZERO_PAGE_1),y
+    asl
+    sta (ZERO_PAGE_1),y
+
+    iny
+    lda (ZERO_PAGE_1),y
+    rol
+    sta (ZERO_PAGE_1),y
+
+    iny
+    lda (ZERO_PAGE_1),y
+    rol
+    sta (ZERO_PAGE_1),y
+
+    iny
+    lda (ZERO_PAGE_1),y
+    rol
+    sta (ZERO_PAGE_1),y
+    bcc .noCarry
+
+    ldy #0
+    lda (ZERO_PAGE_1),y
+    ora #1
+    sta (ZERO_PAGE_1),y    
+
+.noCarry
+    rts
+
+
+; --------------------------------------------------
+; print32Bit prints the 32 bit value to which ZERO_PAGE_1 points
+; --------------------------------------------------
+print32Bit
+    ldy #3
+.loopPrint
+    lda (ZERO_PAGE_1),y
+    jsr printByte
+    dey
+    bpl .loopMove
+
+    rts    
+
+
+.SCRATCH_ROT_16_1
+!byte 0
+.SCRATCH_ROT_16_2
+!byte 0
+; --------------------------------------------------
+; rot16Bits rotates the 32 bit value to which ZERO_PAGE_1 points 2 bytes
+; to the left.
+;
+; op1 <- op1 <<< 16
+; --------------------------------------------------
+rot16Bits
+    +move16Bit ZERO_PAGE_1, ZERO_PAGE_3
+    +sub16BitImmediate 2, ZERO_PAGE_3
+
+    ; save two MSB
+    ldy #3
+    lda (ZERO_PAGE_1),y
+    sta .SCRATCH_ROT_16_1
+    dey
+    lda (ZERO_PAGE_1),y
+    sta .SCRATCH_ROT_16_2
+
+    ldy #3
+    ; copy remaining three bytes
+    lda (ZERO_PAGE_3), y
+    sta (ZERO_PAGE_1), y 
+    dey
+
+    lda (ZERO_PAGE_3), y
+    sta (ZERO_PAGE_1), y
+
+    ldy #1
+    lda .SCRATCH_ROT_16_1
+    sta (ZERO_PAGE_1),Y
+    dey
+    lda .SCRATCH_ROT_16_2
+    sta (ZERO_PAGE_1), y     
+
+    rts
+
+
+; --------------------------------------------------
+; rot7Bit rotates the 32 bit value to which ZERO_PAGE_1 points seven bits
+; to the left.
+;
+; op1 <- op1 <<< 7
+; --------------------------------------------------
+rot7Bits
+    ldx #6
+.loopRot7    
+    jsr rot32Bit
+    dex
+    bpl .loopRot7
+
+    rts
+
+
+; --------------------------------------------------
+; rot12Bit rotates the 32 bit value to which ZERO_PAGE_1 points twelve bits
+; to the left.
+;
+; op1 <- op1 <<< 12
+; --------------------------------------------------
+rot12Bits
+    ldx #11
+.loopRot12    
+    jsr rot32Bit
+    dex
+    bpl .loopRot12
+
+    rts
+
+
+.SCRATCH_ROT_8
+!byte 0
+; --------------------------------------------------
+; rot8Bits rotates the 32 bit value to which ZERO_PAGE_1 points 1 byte
+; to the left.
+;
+; op1 <- op1 <<< 8
+; --------------------------------------------------
+rot8Bits
+    +move16Bit ZERO_PAGE_1, ZERO_PAGE_3
+    +dec16Bit ZERO_PAGE_3
+
+    ; save most significant byte
+    ldy #3
+    lda (ZERO_PAGE_1),y
+    sta .SCRATCH_ROT_8
+
+    ; copy remaining three bytes
+    lda (ZERO_PAGE_3), y
+    sta (ZERO_PAGE_1), y 
+    dey
+
+    lda (ZERO_PAGE_3), y
+    sta (ZERO_PAGE_1), y 
+    dey
+
+    lda (ZERO_PAGE_3), y
+    sta (ZERO_PAGE_1), y
+    dey
+
+    ; y reg now contains 0
+    lda .SCRATCH_ROT_8
+    sta (ZERO_PAGE_1),y
+
+    rts
+
+
+chaChaQuarterRound
+
+    rts
+
+
+CHACHA_TEMP
+!byte 0,0,0,0
+
+CHACHA20_STATE
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+!byte 0,0,0,0
+
+
+CHACHA_OFFSET_TAB
+!byte <CHACHA20_STATE, >CHACHA20_STATE
+!byte <CHACHA20_STATE+4, >CHACHA20_STATE+4
+!byte <CHACHA20_STATE+8, >CHACHA20_STATE+8
+!byte <CHACHA20_STATE+12, >CHACHA20_STATE+12
+
+!byte <CHACHA20_STATE+16, >CHACHA20_STATE+16
+!byte <CHACHA20_STATE+20, >CHACHA20_STATE+20
+!byte <CHACHA20_STATE+24, >CHACHA20_STATE+24
+!byte <CHACHA20_STATE+28, >CHACHA20_STATE+28
+
+!byte <CHACHA20_STATE+32, >CHACHA20_STATE+32
+!byte <CHACHA20_STATE+36, >CHACHA20_STATE+36
+!byte <CHACHA20_STATE+40, >CHACHA20_STATE+40
+!byte <CHACHA20_STATE+44, >CHACHA20_STATE+44
+
+!byte <CHACHA20_STATE+48, >CHACHA20_STATE+48
+!byte <CHACHA20_STATE+52, >CHACHA20_STATE+52
+!byte <CHACHA20_STATE+56, >CHACHA20_STATE+56
+!byte <CHACHA20_STATE+60, >CHACHA20_STATE+60
+
+
+chacha20Transform
     rts
 
 
 chacha20GetId
+    lda #ALGO_CHACHA20
     rts
