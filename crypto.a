@@ -168,38 +168,6 @@ rot16Bits
     rts
 
 
-; --------------------------------------------------
-; rot7Bit rotates the 32 bit value to which ZERO_PAGE_1 points seven bits
-; to the left.
-;
-; op1 <- op1 <<< 7
-; --------------------------------------------------
-rot7Bits
-    ldx #6
-.loopRot7    
-    jsr rot32Bit
-    dex
-    bpl .loopRot7
-
-    rts
-
-
-; --------------------------------------------------
-; rot12Bit rotates the 32 bit value to which ZERO_PAGE_1 points twelve bits
-; to the left.
-;
-; op1 <- op1 <<< 12
-; --------------------------------------------------
-rot12Bits
-    ldx #11
-.loopRot12    
-    jsr rot32Bit
-    dex
-    bpl .loopRot12
-
-    rts
-
-
 .SCRATCH_ROT_8
 !byte 0
 ; --------------------------------------------------
@@ -237,8 +205,39 @@ rot8Bits
     rts
 
 
-chaChaQuarterRound
+; --------------------------------------------------
+; rot7Bit rotates the 32 bit value to which ZERO_PAGE_1 points seven bits
+; to the left.
+;
+; op1 <- op1 <<< 7
+; --------------------------------------------------
+rot7Bits
+    ldx #6
+.loopRot7    
+    jsr rot32Bit
+    dex
+    bpl .loopRot7
 
+    rts
+
+
+; --------------------------------------------------
+; rot12Bit rotates the 32 bit value to which ZERO_PAGE_1 points twelve bits
+; to the left.
+;
+; op1 <- op1 <<< 12
+; --------------------------------------------------
+rot12Bits
+    ldx #11
+.loopRot12    
+    jsr rot32Bit
+    dex
+    bpl .loopRot12
+
+    rts
+
+
+chaChaQuarterRound
     rts
 
 
