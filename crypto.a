@@ -233,7 +233,7 @@ rot12Bits
     jsr rot32Bit
     dex
     bpl .loopRot12
-
+    
     rts
 
 
