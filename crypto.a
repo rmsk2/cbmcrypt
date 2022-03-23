@@ -379,8 +379,9 @@ chacha20BlockFunc
 
 
 chaChaSetInitialState
-    lda #0
+    lda #1
     sta CHACHA_BLOCK
+    lda #0
     sta CHACHA_BLOCK+1
     sta CHACHA_BLOCK+2
     sta CHACHA_BLOCK+3
@@ -414,8 +415,6 @@ I_3
 ; 0x6b206574
 !byte $74,$65,$20,$6b
 
-
-;  
 CHACHA_KEY
 I_4
 !byte $00,$01,$02,$03
@@ -429,7 +428,6 @@ I_6
 I_7
 !byte $0c,$0d,$0e,$0f
 ;!byte 0,0,0,0
-
 I_8
 !byte $10,$11,$12,$13
 ;!byte 0,0,0,0
@@ -446,6 +444,7 @@ I_11
 CHACHA_BLOCK
 I_12
 !byte 0,0,0,0
+
 CHACHA_NONCE
 I_13
 !byte $00,$00,$00,$09
@@ -466,7 +465,6 @@ C_2
 !byte 0,0,0,0
 C_3
 !byte 0,0,0,0
-
 C_4
 !byte 0,0,0,0
 C_5
@@ -475,7 +473,6 @@ C_6
 !byte 0,0,0,0
 C_7
 !byte 0,0,0,0
-
 C_8
 !byte 0,0,0,0
 C_9
@@ -484,7 +481,6 @@ C_10
 !byte 0,0,0,0
 C_11
 !byte 0,0,0,0
-
 C_12
 !byte 0,0,0,0
 C_13
@@ -494,38 +490,45 @@ C_14
 C_15
 !byte 0,0,0,0
 
-!macro printStateWord .addr {
-    +load16BitImmediate .addr, ZERO_PAGE_1
-    jsr print32Bit
-    jsr printCRLF
-}
 
-chachaTest    
+chaChaInit
     jsr chaChaSetInitialState
-    jsr chaChaNextInitialState
-
     jsr chacha20BlockFunc
-
-    +printStateWord C_0
-    +printStateWord C_1
-    +printStateWord C_2
-    +printStateWord C_3
-    +printStateWord C_4
-    +printStateWord C_5
-    +printStateWord C_6
-    +printStateWord C_7
-    +printStateWord C_8
-    +printStateWord C_9
-    +printStateWord C_10
-    +printStateWord C_11
-    +printStateWord C_12
-    +printStateWord C_13
-    +printStateWord C_14
-    +printStateWord C_15
-
+    lda #0
+    sta .KEY_STREAM_COUNT
+    
     rts
 
 
-chacha20GetId
-    lda #ALGO_CHACHA20
+.KEY_STREAM_COUNT
+!byte 0
+chaChaGetNextByte
+    ldx .KEY_STREAM_COUNT
+    cpx #64
+    bne .getKeyByte
+    jsr chaChaNextInitialState
+    jsr chacha20BlockFunc
+    ldx #0
+    stx .KEY_STREAM_COUNT
+.getKeyByte
+    lda CHACHA20_STATE, x
+    inc .KEY_STREAM_COUNT
     rts
+
+
+.KEY_COUNT
+!byte 0,0
+chachaTest    
+    +load16BitImmediate 0, .KEY_COUNT
+    jsr chaChaInit
+.nextByte
+    jsr chaChaGetNextByte
+    jsr printByte
+    +inc16Bit .KEY_COUNT
+    +cmp16BitImmediate 1024, .KEY_COUNT
+    bne .nextByte
+
+    jsr printCRLF
+
+    rts
+
