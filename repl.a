@@ -144,7 +144,7 @@ processCommand
 !pet "test"
 !byte $0d
 testCommand
-    +printStr .TEST_STR
+    jsr chachaTest
     rts
 
 
@@ -390,7 +390,7 @@ dirCommand
 
 
 ; --------------------------------------------------
-; dirCommand
+; stateCommand
 ; --------------------------------------------------
 stateCommand
     +printStr .TXT_DEVICE_NUMBER
