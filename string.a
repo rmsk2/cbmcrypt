@@ -589,7 +589,8 @@ itoaCall
 ; --------------------------------------------------
 ; This routine converts the 2*n character string (containing only the characters 0-9a-f)  
 ; to which TEMP_PTR points to a byte vector, the address of which has to be given in
-; TEMP_PTR2.
+; TEMP_PTR2. The byte vector follows the string convention, i.e. the first byte is a length
+; byte.
 ; 
 ; This routine sets the zero flag in case everything was OK
 ; --------------------------------------------------
