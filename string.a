@@ -557,3 +557,108 @@ itoaCall
     lda .valAddr
     jsr itoaCall
 }
+
+!macro convHexChar .addrCmp, .addrSubtr {
+    pha
+    cmp .addrCmp
+    bcc .digit
+    lda #55
+    jmp .doConv
+.digit
+    lda #$30
+.doConv
+    sta .addrSubtr
+    pla
+    sec
+    sbc .addrSubtr
+.convDone
+}
+
+.PETSCII_SMALL_A
+!pet "a"
+.SUBTRACTOR
+!byte 0
+.HEX_CONV_RES
+!byte 0
+.INPUT_POS
+!byte 0
+.OUTPUT_POS
+!byte 0
+.OUT_LEN
+!byte 0
+; --------------------------------------------------
+; This routine converts the 2*n character string (containing only the characters 0-9a-f)  
+; to which TEMP_PTR points to a byte vector, the address of which has to be given in
+; TEMP_PTR2.
+; 
+; This routine sets the zero flag in case everything was OK
+; --------------------------------------------------
+xtoiCall
+    ; check lengths
+    ldy #0
+    lda (TEMP_PTR),y
+    beq .errXtoi                                ; input is empty
+    tax
+    and #1
+    bne .errXtoi                                ; input length is odd => a nibble is missing
+    txa
+    lsr
+    sta .OUT_LEN
+    cmp (TEMP_PTR2),y
+    beq .checkSuccess
+    bcc .checkSuccess                                
+    jmp .errXtoi                                 ; target string is too short
+
+.checkSuccess
+    ; perform conversion
+    ldy #1
+    sty .INPUT_POS
+    sty .OUTPUT_POS
+    ; convert one byte or two characters
+.loopXtoi
+    lda #0
+    sta .HEX_CONV_RES                           ; clear byte result
+
+    ; look at upper nibble
+    ldy .INPUT_POS                              ; load current input position
+    lda (TEMP_PTR),y
+    +convHexChar .PETSCII_SMALL_A, .SUBTRACTOR
+    asl                                         ; shift so that conversion result becomes the upper nibble
+    asl
+    asl
+    asl
+    sta .HEX_CONV_RES                           ; store first part of conversion
+
+    ; lower nibble
+    iny
+    sty .INPUT_POS                              ; increment read position
+    lda (TEMP_PTR),y                            ; get next character
+    +convHexChar .PETSCII_SMALL_A, .SUBTRACTOR
+    ora .HEX_CONV_RES                           ; merge conversion result with first part
+    ldy .OUTPUT_POS                             ; load output position
+    sta (TEMP_PTR2), y                          ; store conversion result
+
+    ; do stuff necessary for loop
+    inc .INPUT_POS                              ; move input position to next character
+    iny                                         ; increment output position
+    sty .OUTPUT_POS
+    cpy .OUT_LEN                                ; have we converted all characters?
+    beq .loopXtoi
+    bcs .doneHexConv                            ; yes
+    jmp .loopXtoi                               ; no, look at next two characters
+.doneHexConv
+    lda .OUT_LEN
+    ldy #0
+    sta (TEMP_PTR2), y                          ; set correct output length
+    lda #0
+    rts
+.errXtoi    
+    lda #1
+    rts
+
+
+!macro xtoi .addrIn, .addrOut {
+    +load16BitImmediate .addrIn, TEMP_PTR
+    +load16BitImmediate .addrOut, TEMP_PTR2
+    jsr xtoiCall
+}

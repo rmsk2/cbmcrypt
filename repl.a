@@ -144,7 +144,8 @@ processCommand
 !pet "test"
 !byte $0d
 testCommand
-    jsr chachaTest
+    ;jsr chachaTest
+    jsr hexConvTest
     rts
 
 
@@ -419,7 +420,6 @@ stateCommand
 !byte 0,0
 .NEW_DEV_NUM
 !byte 0,0
-
 ; --------------------------------------------------
 ; setDeviceNumberCommand
 ; --------------------------------------------------
@@ -449,5 +449,56 @@ setDeviceNumberCommand
 .errOutOfRangeDevNum
     jsr printCRLF
     +printStr .ERR_OUT_OF_RANGE
+    jsr printCRLF
+    rts
+
+
+.VEC_LEN
+!byte 0
+printByteVector
+    ldy #0
+    lda (ZERO_PAGE_1),Y
+    sta .VEC_LEN
+.printLoopVec
+    iny
+    lda (ZERO_PAGE_1),y
+    jsr printByte
+    cpy .VEC_LEN
+    bne .printLoopVec
+
+    rts
+
+
+PET_HEX_CHARS
+!byte 16
+!pet "0123456789abcdef"
+.TXT_HEX_TEST
+!byte 5
+!pet "hex: "
+.HEX_CONV_BUFFER_IN
+!byte 0
+!byte 0,0,0,0,0,0,0,0
+.HEX_CONV_BUFFER_OUT
+!byte 0
+!byte 0,0,0,0
+hexConvTest
+    ; set size of input buffer
+    lda #8
+    sta .HEX_CONV_BUFFER_IN
+    lda #4
+    sta .HEX_CONV_BUFFER_OUT
+
+    +printStr .TXT_HEX_TEST
+    +inputStr .HEX_CONV_BUFFER_IN, PET_HEX_CHARS
+    jsr printCRLF
+    +xtoi .HEX_CONV_BUFFER_IN, .HEX_CONV_BUFFER_OUT
+    bne .convErrHex
+    +load16BitImmediate .HEX_CONV_BUFFER_OUT, ZERO_PAGE_1
+    jsr printByteVector
+    jsr printCRLF
+    rts
+
+.convErrHex
+    +printStr .ERR_NO_CONVERT
     jsr printCRLF
     rts
