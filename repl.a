@@ -453,21 +453,6 @@ setDeviceNumberCommand
     rts
 
 
-.VEC_LEN
-!byte 0
-printByteVector
-    ldy #0
-    lda (ZERO_PAGE_1),Y
-    sta .VEC_LEN
-.printLoopVec
-    iny
-    lda (ZERO_PAGE_1),y
-    jsr printByte
-    cpy .VEC_LEN
-    bne .printLoopVec
-
-    rts
-
 
 PET_HEX_CHARS
 !byte 16

@@ -651,10 +651,10 @@ xtoiCall
     lda .OUT_LEN
     ldy #0
     sta (TEMP_PTR2), y                          ; set correct output length
-    lda #0
+    lda #0                                      ; all OK => set zero flag
     rts
 .errXtoi    
-    lda #1
+    lda #1                                      ; an error occurred => clear zero flag
     rts
 
 
@@ -663,3 +663,23 @@ xtoiCall
     +load16BitImmediate .addrOut, TEMP_PTR2
     jsr xtoiCall
 }
+
+
+.VEC_LEN
+!byte 0
+; --------------------------------------------------
+; This routine prints the string to which TEMP_PTR points as a vector
+; of bytes.
+; --------------------------------------------------
+printByteVector
+    ldy #0
+    lda (TEMP_PTR),Y
+    sta .VEC_LEN
+.printLoopVec
+    iny
+    lda (TEMP_PTR),y
+    jsr printByte
+    cpy .VEC_LEN
+    bne .printLoopVec
+
+    rts
