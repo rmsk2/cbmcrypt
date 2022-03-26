@@ -671,7 +671,7 @@ xtoiCall
 ; This routine prints the string to which TEMP_PTR points as a vector
 ; of bytes.
 ; --------------------------------------------------
-printByteVector
+printByteVectorCall
     ldy #0
     lda (TEMP_PTR),Y
     sta .VEC_LEN
@@ -685,31 +685,62 @@ printByteVector
     rts
 
 
+!macro printByteVector .addrVec {
+    +load16BitImmediate .addrVec, TEMP_PTR
+    jsr printByteVectorCall
+}
+
 ; --------------------------------------------------
 ; This routine copies the string to which TEMP_PTR points to the
 ; address to which TEMP_PTR2 points.
 ; --------------------------------------------------
-copyByteVector
+copyByteVectorCall
     ldy #0
     lda (TEMP_PTR), Y
     sta .VEC_LEN
     +inc16Bit TEMP_PTR
-.copyLoop
+.copyVecLoop
     cpy .VEC_LEN
     beq .copyDone
     lda (TEMP_PTR),Y
     sta (TEMP_PTR2), Y
     iny
-    jmp .copyLoop
+    jmp .copyVecLoop
 .copyDone
     +dec16Bit TEMP_PTR
     rts
 
 
+!macro copyByteVector .addrSrc, .addrTarget {
+    +load16BitImmediate .addrSrc, TEMP_PTR
+    +load16BitImmediate .addrTarget, TEMP_PTR2
+    jsr copyByteVectorCall
+}
+
+.MEMSET_LEN
+!byte 0
 ; --------------------------------------------------
 ; This routine sets the memory to which TEMP_PTR points to the
 ; value given in X register. This is repeated y register number
 ; of times.
 ; --------------------------------------------------
-memset
+memsetCall
+    sty .MEMSET_LEN
+    txa
+    ldy #0
+.loopMemSet
+    cpy .MEMSET_LEN
+    beq .setDone
+    sta (TEMP_PTR), y
+    iny
+    jmp .loopMemSet
+.setDone
     rts
+
+
+!macro memset .val, .addrLen, .addrTarget {
+    ldx #.val
+    ldy .addrLen
+    +load16BitImmediate .addrTarget, TEMP_PTR
+    jsr memsetCall
+} 

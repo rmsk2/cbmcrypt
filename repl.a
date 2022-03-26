@@ -466,6 +466,9 @@ PET_HEX_CHARS
 .HEX_CONV_BUFFER_OUT
 !byte 0
 !byte 0,0,0,0
+.COPIED_BUFFER
+!byte 4
+!byte 0,0,0,0
 hexConvTest
     ; set size of input buffer
     lda #8
@@ -478,9 +481,18 @@ hexConvTest
     jsr printCRLF
     +xtoi .HEX_CONV_BUFFER_IN, .HEX_CONV_BUFFER_OUT
     bne .convErrHex
-    +load16BitImmediate .HEX_CONV_BUFFER_OUT, ZERO_PAGE_1
-    jsr printByteVector
+
+    +printByteVector .HEX_CONV_BUFFER_OUT
     jsr printCRLF
+
+    +memset $FF, .COPIED_BUFFER, .COPIED_BUFFER+1
+    +printByteVector .COPIED_BUFFER
+    jsr printCRLF
+
+    +copyByteVector .HEX_CONV_BUFFER_OUT, .COPIED_BUFFER+1
+    +printByteVector .COPIED_BUFFER
+    jsr printCRLF
+
     rts
 
 .convErrHex
