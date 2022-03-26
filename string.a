@@ -743,4 +743,11 @@ memsetCall
     ldy .addrLen
     +load16BitImmediate .addrTarget, TEMP_PTR
     jsr memsetCall
-} 
+}
+
+!macro memsetImmediate .val, .Len, .addrTarget {
+    ldx #.val
+    ldy #.Len
+    +load16BitImmediate .addrTarget, TEMP_PTR
+    jsr memsetCall
+}

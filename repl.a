@@ -144,8 +144,8 @@ processCommand
 !pet "test"
 !byte $0d
 testCommand
-    ;jsr chachaTest
-    jsr hexConvTest
+    jsr chachaTest
+    ;jsr hexConvTest
     rts
 
 
