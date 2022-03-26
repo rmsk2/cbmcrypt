@@ -683,3 +683,33 @@ printByteVector
     bne .printLoopVec
 
     rts
+
+
+; --------------------------------------------------
+; This routine copies the string to which TEMP_PTR points to the
+; address to which TEMP_PTR2 points.
+; --------------------------------------------------
+copyByteVector
+    ldy #0
+    lda (TEMP_PTR), Y
+    sta .VEC_LEN
+    +inc16Bit TEMP_PTR
+.copyLoop
+    cpy .VEC_LEN
+    beq .copyDone
+    lda (TEMP_PTR),Y
+    sta (TEMP_PTR2), Y
+    iny
+    jmp .copyLoop
+.copyDone
+    +dec16Bit TEMP_PTR
+    rts
+
+
+; --------------------------------------------------
+; This routine sets the memory to which TEMP_PTR points to the
+; value given in X register. This is repeated y register number
+; of times.
+; --------------------------------------------------
+memset
+    rts
