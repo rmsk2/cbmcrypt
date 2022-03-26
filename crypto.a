@@ -370,6 +370,11 @@ chacha20BlockFunc
     jsr chaChaAddState
     rts
 
+chaChaClearKey
+    +memset 0, 32, CHACHA_KEY
+    +memset 0, 12, CHACHA_NONCE
+    rts
+
 
 chaChaSetInitialState
     lda #1
@@ -492,8 +497,7 @@ chaChaInitCall
     rts
 
 !macro chaChaInit .addrKey, .addrNonce {
-    +memset 0, 32, CHACHA_KEY
-    +memset 0, 12, CHACHA_NONCE
+    jsr chaChaClearKey
     +copyByteVector .addrKey, CHACHA_KEY
     +copyByteVector .addrNonce, CHACHA_NONCE    
     jsr chaChaInitCall
