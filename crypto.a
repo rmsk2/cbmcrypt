@@ -522,7 +522,7 @@ ADDR_PRNG_OUT
 .DESIRED_OUT_LENGTH
 !byte 0
 ; --------------------------------------------------
-; chaChaDerive uses ChaCha20 as a PRNG. It expands the seed value
+; chaChaDeriveCall uses ChaCha20 as a PRNG. It expands the seed value
 ; the address of which has to be specified through ADDR_SEED into a
 ; pseudorandom value stored at ADDR_PRNG_OUT. Both parameters have to 
 ; be a string having a preceeding length byte. The length byte of
@@ -530,7 +530,7 @@ ADDR_PRNG_OUT
 ; the length of the out byte sequence. The seed can not be longer than
 ; 32 bytes.
 ; --------------------------------------------------
-chaChaDerive
+chaChaDeriveCall
     ; set up ChaCha20
     jsr chaChaClearKey
     +load16BitImmediate .DERIVATION_NONCE, ZERO_PAGE_1
@@ -569,6 +569,12 @@ chaChaDerive
     rts
 
 
+!macro chaChaDerive .addrSeed, .addrDerived {
+    +load16BitImmediate .addrSeed, ADDR_SEED
+    +load16BitImmediate .addrDerived, ADDR_PRNG_OUT
+    jsr chaChaDeriveCall   
+}
+
 !ifdef IS_TEST {
 
 CHACHA_TEST_KEY
@@ -595,6 +601,20 @@ chachaTest
 
     jsr printCRLF
 
+    rts
+
+CHACHA_DERIVED
+!byte 32
+!skip 32
+
+CHACHA_TEST_SEED
+!byte 23
+!pet "aBjsdhgf/SH+w7rt8284756"
+
+chaChaDeriveTest
+    +chaChaDerive CHACHA_TEST_SEED, CHACHA_DERIVED
+    +printByteVector CHACHA_DERIVED
+    jsr printCRLF
     rts
 
 }
