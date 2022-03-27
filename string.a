@@ -692,7 +692,7 @@ printByteVectorCall
 
 ; --------------------------------------------------
 ; This routine copies the contents of string to which TEMP_PTR points to the
-; address to which TEMP_PTR2 points. The lenght byte is not copied.
+; address to which TEMP_PTR2 points. The length byte is not copied.
 ; --------------------------------------------------
 copyByteVectorCall
     ldy #0
