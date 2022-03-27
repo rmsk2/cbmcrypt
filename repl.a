@@ -1,5 +1,4 @@
 CMD_LEN = 3
-INCLUDE_DIAG = 1
 
 progStart
     ;jsr showTitleScreen
@@ -63,7 +62,7 @@ progStart
 !byte <.DIR_COMMAND, >.DIR_COMMAND, <dirCommand, >dirCommand
 !byte <.DEV_COMMAND, >.DEV_COMMAND, <setDeviceNumberCommand, >setDeviceNumberCommand
 !byte <.STATE_COMMAND, >.STATE_COMMAND, <stateCommand, >stateCommand
-!ifdef INCLUDE_DIAG {
+!ifdef IS_TEST {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
 !byte 0,0,0,0 ; end marker
@@ -139,6 +138,8 @@ processCommand
     rts
 
 
+!ifdef IS_TEST {
+
 .TEST_STR
 !byte 5
 !pet "test"
@@ -148,6 +149,7 @@ testCommand
     ;jsr hexConvTest
     rts
 
+}
 
 ; --------------------------------------------------
 ; helpCommand
@@ -457,6 +459,9 @@ setDeviceNumberCommand
 PET_HEX_CHARS
 !byte 16
 !pet "0123456789abcdef"
+
+!ifdef IS_TEST {
+
 .TXT_HEX_TEST
 !byte 5
 !pet "hex: "
@@ -499,3 +504,5 @@ hexConvTest
     +printStr .ERR_NO_CONVERT
     jsr printCRLF
     rts
+
+}

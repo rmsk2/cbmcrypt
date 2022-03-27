@@ -79,7 +79,7 @@ waitForKey
 STR_LEN_TEMP
 !byte 0
 ; --------------------------------------------------
-; This routine copies a string referenced via TEMP_PTR to a string
+; This routine copies a string referenced via TEMP_PTR to the memory address
 ; referenced by TEMP_PTR2. The first byte of a string is a length
 ; value followed by the characters of the string. The maximum length
 ; of a string including the length byte es 255 bytes. This also means
@@ -691,8 +691,8 @@ printByteVectorCall
 }
 
 ; --------------------------------------------------
-; This routine copies the string to which TEMP_PTR points to the
-; address to which TEMP_PTR2 points.
+; This routine copies the contents of string to which TEMP_PTR points to the
+; address to which TEMP_PTR2 points. The lenght byte is not copied.
 ; --------------------------------------------------
 copyByteVectorCall
     ldy #0

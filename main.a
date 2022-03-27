@@ -24,6 +24,7 @@ entryPoint
 }
 
 FAST_MUL = 1
+IS_TEST =  1
 
 !zone arith
 !source "arith16.a"

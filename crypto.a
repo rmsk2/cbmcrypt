@@ -399,15 +399,6 @@ chaChaNextInitialState
     jmp chaChaCopyState
 
 
-CHACHA_TEST_KEY
-!byte 32
-!byte $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-!byte $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1a,$1b,$1c,$1d,$1e,$1f
-
-CHACHA_TEST_NONCE
-!byte 12
-!byte $00,$00,$00,$00,$00,$00,$00,$4a,$00,$00,$00,$00
-
 CHACHA20_INITIAL_STATE
 I_0
 ;0x61707865
@@ -519,6 +510,77 @@ chaChaGetNextByte
     rts
 
 
+.DERIVATION_NONCE
+!byte 8
+!pet "cbmcrypt"
+ADDR_SEED
+!byte 0,0
+ADDR_PRNG_OUT
+!byte 0,0
+.DERIVE_OUT_COUNT
+!byte 0
+.DESIRED_OUT_LENGTH
+!byte 0
+; --------------------------------------------------
+; chaChaDerive uses ChaCha20 as a PRNG. It expands the seed value
+; the address of which has to be specified through ADDR_SEED into a
+; pseudorandom value stored at ADDR_PRNG_OUT. Both parameters have to 
+; be a string having a preceeding length byte. The length byte of
+; ADDR_SEED determines the input length and the length byte of ADDR_PRNG_OUT
+; the length of the out byte sequence. The seed can not be longer than
+; 32 bytes.
+; --------------------------------------------------
+chaChaDerive
+    ; set up ChaCha20
+    jsr chaChaClearKey
+    +load16BitImmediate .DERIVATION_NONCE, ZERO_PAGE_1
+    +load16BitImmediate CHACHA_NONCE, ZERO_PAGE_3
+    jsr copyByteVectorCall
+    +move16Bit ADDR_SEED, ZERO_PAGE_1
+    +load16BitImmediate CHACHA_KEY, ZERO_PAGE_3
+    jsr copyByteVectorCall
+    jsr chaChaInitCall
+
+    ; copy desired length
+    +move16Bit ADDR_PRNG_OUT, ZERO_PAGE_1
+    ldy #0
+    lda (ZERO_PAGE_1),y
+    sta .DESIRED_OUT_LENGTH
+
+    ; initialize loop
+    lda #0
+    sta .DERIVE_OUT_COUNT
+    +inc16Bit ADDR_PRNG_OUT
+.deriveLoop
+    ldy .DERIVE_OUT_COUNT
+    cpy .DESIRED_OUT_LENGTH
+    beq .derivationDone
+    jsr chaChaGetNextByte
+    pha
+    +move16Bit ADDR_PRNG_OUT, ZERO_PAGE_1
+    pla
+    ldy .DERIVE_OUT_COUNT
+    sta (ZERO_PAGE_1), y
+    inc .DERIVE_OUT_COUNT
+    jmp .deriveLoop
+
+.derivationDone
+    +dec16Bit ADDR_PRNG_OUT
+    rts
+
+
+!ifdef IS_TEST {
+
+CHACHA_TEST_KEY
+!byte 32
+!byte $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0a,$0b,$0c,$0d,$0e,$0f
+!byte $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1a,$1b,$1c,$1d,$1e,$1f
+
+CHACHA_TEST_NONCE
+!byte 12
+!byte $00,$00,$00,$00,$00,$00,$00,$4a,$00,$00,$00,$00
+
+
 .KEY_COUNT
 !byte 0,0
 chachaTest    
@@ -534,4 +596,6 @@ chachaTest
     jsr printCRLF
 
     rts
+
+}
     
