@@ -517,6 +517,8 @@ ADDR_SEED
 !byte 0,0
 ADDR_PRNG_OUT
 !byte 0,0
+ADDR_CHECK_VALUE
+!byte 0,0
 .DERIVE_OUT_COUNT
 !byte 0
 .DESIRED_OUT_LENGTH
@@ -566,12 +568,35 @@ chaChaDeriveCall
 
 .derivationDone
     +dec16Bit ADDR_PRNG_OUT
+    ; generate check value
+    +move16Bit ADDR_CHECK_VALUE, ZERO_PAGE_1
+    lda #3
+    ldy #0
+    sta (ZERO_PAGE_1), Y
+    iny
+    sty .DERIVE_OUT_COUNT
+
+    jsr chaChaGetNextByte
+    ldy .DERIVE_OUT_COUNT
+    sta (ZERO_PAGE_1), Y
+    inc .DERIVE_OUT_COUNT
+
+    jsr chaChaGetNextByte
+    ldy .DERIVE_OUT_COUNT
+    sta (ZERO_PAGE_1), Y
+    inc .DERIVE_OUT_COUNT
+
+    jsr chaChaGetNextByte
+    ldy .DERIVE_OUT_COUNT
+    sta (ZERO_PAGE_1), Y
+
     rts
 
 
-!macro chaChaDerive .addrSeed, .addrDerived {
+!macro chaChaDerive .addrSeed, .addrDerived, .addrCheckValue {
     +load16BitImmediate .addrSeed, ADDR_SEED
     +load16BitImmediate .addrDerived, ADDR_PRNG_OUT
+    +load16BitImmediate .addrCheckValue, ADDR_CHECK_VALUE
     jsr chaChaDeriveCall   
 }
 
@@ -586,6 +611,9 @@ CHACHA_TEST_NONCE
 !byte 12
 !byte $00,$00,$00,$00,$00,$00,$00,$4a,$00,$00,$00,$00
 
+CHACHA_CHECK_VALUE
+!byte 3
+!byte 0,0,0
 
 .KEY_COUNT
 !byte 0,0
@@ -612,8 +640,10 @@ CHACHA_TEST_SEED
 !pet "aBjsdhgf/SH+w7rt8284756"
 
 chaChaDeriveTest
-    +chaChaDerive CHACHA_TEST_SEED, CHACHA_DERIVED
+    +chaChaDerive CHACHA_TEST_SEED, CHACHA_DERIVED, CHACHA_CHECK_VALUE
     +printByteVector CHACHA_DERIVED
+    jsr printCRLF
+    +printByteVector CHACHA_CHECK_VALUE
     jsr printCRLF
     rts
 

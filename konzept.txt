@@ -17,7 +17,7 @@ Initialisierung (Eingabe: KeyID, Key, Nonce-Prefix)
 - KeyID speichern
 - Nonce prefix speichern
 - Key expandieren
-- Check value berechnen und ausgeben
+- Check value (die 3 Bytes, die auf den expandierten Key folgen) berechnen und ausgeben
 
 Verschlüsselung (Eingabe: Nachrichten-Nr. 0-999, Filename)
 ------------------------------------------
