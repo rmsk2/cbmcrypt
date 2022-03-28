@@ -1,0 +1,35 @@
+Keysheet, pro Tag
+-----------------
+1. KeyID
+2. Key
+3. Nonce-Prefix
+4. Check Value
+
+File format
+-----------
+                          12
+               |        Nonce         |
+   2       2           2         10       0-384
+Length | KeyID | Nonce-Prefix | Nonce | Ciphertext
+
+Initialisierung (Eingabe: KeyID, Key, Nonce-Prefix)
+---------------------------------------------------
+- KeyID speichern
+- Nonce prefix speichern
+- Key expandieren
+- Check value berechnen und ausgeben
+
+Verschlüsselung (Eingabe: Nachrichten-Nr. 0-999, Filename)
+------------------------------------------
+- Bereits initialisiert?
+- Nonce mit korrektem Prefix generieren (aus Nachrichten-Nr.)
+- Daten ChaCha20 verschlüsseln (mit expandiertem Schlüssel + generierter Nonce)
+- Daten auf Floppy speichern (Filename)
+
+Entschlüsselung (Eingabe: Filename)
+-----------------------------------
+- Bereits initialisiert?
+- Daten von Floppy lesen (Filename)
+- KeyID vergleichen
+- Daten entschlüsseln (mit expandiertem Sclüssel + Nonce aus File)
+- Daten anzeigen
