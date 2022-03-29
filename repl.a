@@ -147,7 +147,8 @@ processCommand
 testCommand
     ;jsr chachaTest
     ;jsr hexConvTest
-    jsr chaChaDeriveTest
+    ;jsr chaChaDeriveTest
+    jsr chaChaNonceTest
     rts
 
 }

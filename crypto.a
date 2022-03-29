@@ -600,6 +600,50 @@ chaChaDeriveCall
     jsr chaChaDeriveCall   
 }
 
+
+ADDR_PREFIX
+!byte 0,0
+ADDR_MSG_COUNTER
+!byte 0,0
+ADDR_NONCE
+!byte 0,0
+.PREFIX_LEN
+!byte 0,0
+constructNonceCall
+    ; set length to 12
+    +move16Bit ADDR_NONCE, ZERO_PAGE_1
+    lda #12
+    ldy #0
+    sta (ZERO_PAGE_1), y
+    ; clear contents of traget memory
+    +inc16Bit ZERO_PAGE_1
+    ldx #0
+    ldy #12
+    jsr memsetCall
+    ; copy nonce prefix
+    +move16Bit ADDR_PREFIX, ZERO_PAGE_1
+    ldy #0
+    lda (ZERO_PAGE_1),Y
+    sta .PREFIX_LEN                                ; save length of prefix
+    +move16Bit ADDR_NONCE, ZERO_PAGE_3
+    +inc16Bit ZERO_PAGE_3
+    jsr copyByteVectorCall
+    ; copy message counter
+    +move16Bit ADDR_MSG_COUNTER, ZERO_PAGE_1
+    +move16Bit ADDR_NONCE, ZERO_PAGE_3
+    +add16Bit .PREFIX_LEN, ZERO_PAGE_3
+    +inc16Bit ZERO_PAGE_3
+    jsr copyByteVectorCall
+ 
+    rts
+
+!macro constructNonce .addrPrefix, .addrMsgCount, .addrNonce {
+    +load16BitImmediate .addrPrefix, ADDR_PREFIX
+    +load16BitImmediate .addrMsgCount, ADDR_MSG_COUNTER
+    +load16BitImmediate .addrNonce, ADDR_NONCE
+    jsr constructNonceCall
+}
+
 !ifdef IS_TEST {
 
 CHACHA_TEST_KEY
@@ -645,6 +689,23 @@ chaChaDeriveTest
     jsr printCRLF
     +printByteVector CHACHA_CHECK_VALUE
     jsr printCRLF
+    rts
+
+MSG_COUNTER 
+!byte 2
+!byte 42, 1
+TEST_PREFIX
+!byte 2
+!byte $d2,$ff
+TEST_NONCE
+!byte 12
+!byte 0,0,0,0,0,0,0,0,0,0,0,0
+
+chaChaNonceTest 
+    +constructNonce TEST_PREFIX, MSG_COUNTER, TEST_NONCE
+    +printByteVector TEST_NONCE
+    jsr printCRLF
+
     rts
 
 }
