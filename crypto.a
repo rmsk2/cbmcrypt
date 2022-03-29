@@ -615,7 +615,7 @@ constructNonceCall
     lda #12
     ldy #0
     sta (ZERO_PAGE_1), y
-    ; clear contents of traget memory
+    ; clear contents of target memory
     +inc16Bit ZERO_PAGE_1
     ldx #0
     ldy #12
