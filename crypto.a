@@ -510,22 +510,30 @@ chaChaGetNextByte
     rts
 
 
+NONCE_FIXED_LEN = 8
+
 .DERIVATION_NONCE
-!byte 8
+!byte NONCE_FIXED_LEN              ; 8 nonce characters
 !pet "cbmcrypt"
+!byte 0,0,0,0                      ; room to make a full 12 byte nonce 
+
 ADDR_SEED
+!byte 0,0
+ADDR_KEY_ID
 !byte 0,0
 ADDR_PRNG_OUT
 !byte 0,0
 ADDR_CHECK_VALUE
 !byte 0,0
+
 .DERIVE_OUT_COUNT
 !byte 0
 .DESIRED_OUT_LENGTH
 !byte 0
 ; --------------------------------------------------
 ; chaChaDeriveCall uses ChaCha20 as a PRNG. It expands the seed value
-; the address of which has to be specified through ADDR_SEED into a
+; the address of which has to be specified through ADDR_SEED and the key id
+; which is referenced by ADRR_KEY_ID into a
 ; pseudorandom value stored at ADDR_PRNG_OUT. Both parameters have to 
 ; be a string having a preceeding length byte. The length byte of
 ; ADDR_SEED determines the input length and the length byte of ADDR_PRNG_OUT
@@ -535,12 +543,26 @@ ADDR_CHECK_VALUE
 chaChaDeriveCall
     ; set up ChaCha20
     jsr chaChaClearKey
+
+    ; set current length of derivation nonce to NONCE_FIXED_LEN
+    lda #NONCE_FIXED_LEN
+    sta .DERIVATION_NONCE
+    
+    ; append key id to fixed nonce value
+    +move16Bit ADDR_KEY_ID, ZERO_PAGE_1
+    +load16BitImmediate .DERIVATION_NONCE, ZERO_PAGE_3
+    jsr strCatCall
+
+    ; copy nonce value to cha cha state
     +load16BitImmediate .DERIVATION_NONCE, ZERO_PAGE_1
     +load16BitImmediate CHACHA_NONCE, ZERO_PAGE_3
     jsr copyByteVectorCall
+    
+    ; copy key seed to cha cha state
     +move16Bit ADDR_SEED, ZERO_PAGE_1
     +load16BitImmediate CHACHA_KEY, ZERO_PAGE_3
     jsr copyByteVectorCall
+
     jsr chaChaInitCall
 
     ; copy desired length
@@ -593,10 +615,11 @@ chaChaDeriveCall
     rts
 
 
-!macro chaChaDerive .addrSeed, .addrDerived, .addrCheckValue {
+!macro chaChaDerive .addrSeed, .addrKeyId, .addrDerived, .addrCheckValue {
     +load16BitImmediate .addrSeed, ADDR_SEED
     +load16BitImmediate .addrDerived, ADDR_PRNG_OUT
     +load16BitImmediate .addrCheckValue, ADDR_CHECK_VALUE
+    +load16BitImmediate .addrKeyId, ADDR_KEY_ID
     jsr chaChaDeriveCall   
 }
 
@@ -659,6 +682,10 @@ CHACHA_CHECK_VALUE
 !byte 3
 !byte 0,0,0
 
+CHACHA_TEST_KEY_ID
+!byte 2
+!byte $11,$22
+
 .KEY_COUNT
 !byte 0,0
 chachaTest    
@@ -684,7 +711,7 @@ CHACHA_TEST_SEED
 !pet "aBjsdhgf/SH+w7rt8284756"
 
 chaChaDeriveTest
-    +chaChaDerive CHACHA_TEST_SEED, CHACHA_DERIVED, CHACHA_CHECK_VALUE
+    +chaChaDerive CHACHA_TEST_SEED, CHACHA_TEST_KEY_ID, CHACHA_DERIVED, CHACHA_CHECK_VALUE
     +printByteVector CHACHA_DERIVED
     jsr printCRLF
     +printByteVector CHACHA_CHECK_VALUE

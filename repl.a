@@ -483,7 +483,7 @@ NONCE_PREFIX_STR
 !pet "nonce prefix: "
 
 KEY_STR
-!byte 4
+!byte 5
 !pet "key: "
 
 CHECK_VALUE_STR
@@ -510,7 +510,7 @@ KEY_IN_BUFFER
 
 CHECK_VALUE
 !byte 3
-!byte  0,0,0
+!byte 0,0,0
 
 KEY_ID
 !byte 2
@@ -560,14 +560,10 @@ initCommand
     jmp .notLongEnough
 .hexConvNonce
     +xtoi HEX_CONV_BUFFER_IN, NONCE_PREFIX
-    bne .convErrIni
+    beq .contReadKey
+    jmp .convErrIni
 
-    ;+printByteVector KEY_ID
-    ;jsr printCRLF
-
-    ;+printByteVector NONCE_PREFIX
-    ;jsr printCRLF
-
+.contReadKey
     lda #32
     sta KEY_IN_BUFFER
 
@@ -579,10 +575,7 @@ initCommand
     cmp #MIN_KEY_LENGTH
     bcc .errAtLeast15
 
-    ;+printStr KEY_IN_BUFFER
-    ;jsr printByteCRLF
-
-    +chaChaDerive KEY_IN_BUFFER, DAY_KEY, CHECK_VALUE
+    +chaChaDerive KEY_IN_BUFFER, KEY_ID, DAY_KEY, CHECK_VALUE
     lda #IS_INITIALIZED
     sta ALREADY_INITIALIZED
 
