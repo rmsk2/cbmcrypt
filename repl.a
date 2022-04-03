@@ -1,4 +1,7 @@
 CMD_LEN = 3
+NOT_INITIALIZED = 0
+IS_INITIALIZED = 1
+MIN_KEY_LENGTH = 15
 
 progStart
     ;jsr showTitleScreen
@@ -41,6 +44,10 @@ progStart
 !byte 3
 !pet "ste"
 
+.INIT_COMMAND
+!byte 3
+!pet "ini"
+
 
 .COMMAND_NOT_RECOGNIZED
 !byte 22
@@ -62,6 +69,7 @@ progStart
 !byte <.DIR_COMMAND, >.DIR_COMMAND, <dirCommand, >dirCommand
 !byte <.DEV_COMMAND, >.DEV_COMMAND, <setDeviceNumberCommand, >setDeviceNumberCommand
 !byte <.STATE_COMMAND, >.STATE_COMMAND, <stateCommand, >stateCommand
+!byte <.INIT_COMMAND, >.INIT_COMMAND, <initCommand, >initCommand
 !ifdef IS_TEST {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -461,6 +469,141 @@ setDeviceNumberCommand
 PET_HEX_CHARS
 !byte 16
 !pet "0123456789abcdef"
+
+PET_KEY_CHARS
+!byte 64
+!pet "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/"
+
+KEY_ID_STR
+!byte 8
+!pet "key id: "
+
+NONCE_PREFIX_STR
+!byte 14
+!pet "nonce prefix: "
+
+KEY_STR
+!byte 4
+!pet "key: "
+
+CHECK_VALUE_STR
+!byte 13
+!pet "check value: "
+
+.ERR_NOT_LONG_ENOUGH
+!byte 19
+!pet "length has to be 4"
+!byte $0d
+
+.ERR_AT_LEAST_15
+!byte 29
+!pet "length has to be at least 15"
+!byte $0d
+
+
+ALREADY_INITIALIZED 
+!byte NOT_INITIALIZED
+
+KEY_IN_BUFFER
+!byte 32
+!skip 32
+
+CHECK_VALUE
+!byte 3
+!byte  0,0,0
+
+KEY_ID
+!byte 2
+!byte 0,0
+
+NONCE_PREFIX
+!byte 2
+!byte 0,0
+
+DAY_KEY
+!byte 32
+!skip 32
+
+HEX_CONV_BUFFER_IN
+!byte 4
+!byte 0,0,0,0
+
+initCommand
+    lda #2
+    sta KEY_ID
+    lda #2
+    sta NONCE_PREFIX
+    lda #4
+    sta HEX_CONV_BUFFER_IN
+
+    +printStr KEY_ID_STR
+    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS
+    jsr printCRLF
+    lda HEX_CONV_BUFFER_IN
+    cmp #4
+    beq .doConvert
+    jmp .notLongEnough
+.doConvert
+    +xtoi HEX_CONV_BUFFER_IN, KEY_ID
+    beq .goOn
+    jmp .convErrIni
+.goOn
+    lda #4
+    sta HEX_CONV_BUFFER_IN
+
+    +printStr NONCE_PREFIX_STR
+    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS
+    jsr printCRLF
+    lda HEX_CONV_BUFFER_IN
+    cmp #4
+    beq .hexConvNonce
+    jmp .notLongEnough
+.hexConvNonce
+    +xtoi HEX_CONV_BUFFER_IN, NONCE_PREFIX
+    bne .convErrIni
+
+    ;+printByteVector KEY_ID
+    ;jsr printCRLF
+
+    ;+printByteVector NONCE_PREFIX
+    ;jsr printCRLF
+
+    lda #32
+    sta KEY_IN_BUFFER
+
+    +printStr KEY_STR
+    +inputStr KEY_IN_BUFFER, PET_KEY_CHARS
+    jsr printCRLF
+
+    lda KEY_IN_BUFFER
+    cmp #MIN_KEY_LENGTH
+    bcc .errAtLeast15
+
+    ;+printStr KEY_IN_BUFFER
+    ;jsr printByteCRLF
+
+    +chaChaDerive KEY_IN_BUFFER, DAY_KEY, CHECK_VALUE
+    lda #IS_INITIALIZED
+    sta ALREADY_INITIALIZED
+
+    +printStr CHECK_VALUE_STR
+    +printByteVector CHECK_VALUE
+    jsr printCRLF
+
+    rts
+.convErrIni
+    +printStr .ERR_NO_CONVERT
+    jsr printCRLF
+    rts
+.notLongEnough
+    +printStr .ERR_NOT_LONG_ENOUGH
+    jsr printCRLF
+    rts
+.errAtLeast15
+    +printStr .ERR_AT_LEAST_15
+    jsr printCRLF
+    rts
+
 
 !ifdef IS_TEST {
 

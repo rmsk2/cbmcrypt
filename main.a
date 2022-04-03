@@ -42,6 +42,8 @@ IS_TEST =  1
 !source "repl.a"
 
 main
+    lda #NOT_INITIALIZED
+    sta ALREADY_INITIALIZED 
     lda #14
     jsr CHAROUT
     jsr progStart
