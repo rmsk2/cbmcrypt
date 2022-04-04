@@ -577,6 +577,7 @@ initCommand
     lda #CHECK_VAL_NUM_CHARS/2
     sta CHECK_VALUE_REFERENCE                                    ; set length of check value reference
 
+    ; enter key ID
     lda #KEY_ID_NUM_CHARS                                        ; set maximum input length
     sta HEX_CONV_BUFFER_IN
     +printStr KEY_ID_STR
@@ -592,6 +593,7 @@ initCommand
     jmp .convErrIni
 .goOn
 
+    ; enter nonce prefix
     lda #NONCE_PREFIX_NUM_CHARS                                 ; set maximum input length
     sta HEX_CONV_BUFFER_IN
     +printStr NONCE_PREFIX_STR
@@ -607,6 +609,7 @@ initCommand
     jmp .convErrIni
 
 .contReadKey
+    ; enter key seed
     lda #32                                                     ; set maximum input length
     sta KEY_IN_BUFFER
 
@@ -640,6 +643,7 @@ initCommand
     +printByteVector CHECK_VALUE
     jsr printCRLF    
 }
+    ; enter check value
     lda #CHECK_VAL_NUM_CHARS                                    ; set maximum input length
     sta HEX_CONV_BUFFER_IN
     +printStr CHECK_VALUE_STR
