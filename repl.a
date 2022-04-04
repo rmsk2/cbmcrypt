@@ -402,6 +402,19 @@ dirCommand
     rts
 
 
+.TXT_INITIALIZED
+!byte 13
+!pet "initialized: "
+
+.TXT_YES
+!byte 3
+!pet "yes"
+
+.TXT_NO
+!byte 2
+!pet "no"
+
+
 ; --------------------------------------------------
 ; stateCommand
 ; --------------------------------------------------
@@ -410,6 +423,17 @@ stateCommand
     lda DEVICE_NUM
     jsr printByteCRLF
 
+    +printStr .TXT_INITIALIZED
+    lda ALREADY_INITIALIZED
+    cmp #IS_INITIALIZED
+    beq .printInitialized
+    +printStr .TXT_NO
+    jmp .printCRLF
+.printInitialized
+    +printStr .TXT_YES
+.printCRLF
+    jsr printCRLF
+
     rts
 
 
@@ -417,8 +441,9 @@ stateCommand
 !byte 18
 !pet "value out of range"
 .ERR_NO_CONVERT
-!byte 15
+!byte 16
 !pet "can not convert"
+!byte $0d
 
 
 .TXT_DEVICE_NUMBER_INPUT
@@ -491,8 +516,8 @@ CHECK_VALUE_STR
 !pet "check value: "
 
 .ERR_NOT_LONG_ENOUGH
-!byte 19
-!pet "length has to be 4"
+!byte 17
+!pet "not enough chars"
 !byte $0d
 
 .ERR_AT_LEAST_15
@@ -500,24 +525,37 @@ CHECK_VALUE_STR
 !pet "length has to be at least 15"
 !byte $0d
 
+.ERR_CHECK_VAL_INCORRECT
+!byte 20
+!pet "check val incorrect"
+!byte $0d
+
+KEY_ID_NUM_CHARS = 4
+NONCE_PREFIX_NUM_CHARS = 4
+CHECK_VAL_NUM_CHARS = 6
+KEY_SEED_LEN = 32
 
 ALREADY_INITIALIZED 
 !byte NOT_INITIALIZED
 
 KEY_IN_BUFFER
-!byte 32
-!skip 32
+!byte KEY_SEED_LEN
+!skip KEY_SEED_LEN
+
+CHECK_VALUE_REFERENCE
+!byte CHECK_VAL_NUM_CHARS/2
+!byte 0,0,0
 
 CHECK_VALUE
-!byte 3
+!byte CHECK_VAL_NUM_CHARS/2
 !byte 0,0,0
 
 KEY_ID
-!byte 2
+!byte KEY_ID_NUM_CHARS/2
 !byte 0,0
 
 NONCE_PREFIX
-!byte 2
+!byte NONCE_PREFIX_NUM_CHARS/2
 !byte 0,0
 
 DAY_KEY
@@ -525,78 +563,118 @@ DAY_KEY
 !skip 32
 
 HEX_CONV_BUFFER_IN
-!byte 4
-!byte 0,0,0,0
+!byte 6
+!byte 0,0,0,0,0,0
 
 initCommand
-    lda #2
-    sta KEY_ID
-    lda #2
-    sta NONCE_PREFIX
-    lda #4
-    sta HEX_CONV_BUFFER_IN
+    lda #NOT_INITIALIZED
+    sta ALREADY_INITIALIZED
 
+    lda #KEY_ID_NUM_CHARS/2                                      
+    sta KEY_ID                                                   ; set length of KEY_ID buffer
+    lda #NONCE_PREFIX_NUM_CHARS/2
+    sta NONCE_PREFIX                                             ; set length of NONCE_PREFIX buffer
+    lda #CHECK_VAL_NUM_CHARS/2
+    sta CHECK_VALUE_REFERENCE                                    ; set length of check value reference
+
+    lda #KEY_ID_NUM_CHARS                                        ; set maximum input length
+    sta HEX_CONV_BUFFER_IN
     +printStr KEY_ID_STR
-    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS
+    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS                  ; read input
     jsr printCRLF
     lda HEX_CONV_BUFFER_IN
-    cmp #4
+    cmp #KEY_ID_NUM_CHARS                                        ; check that the correct number of chars has been entered
     beq .doConvert
     jmp .notLongEnough
 .doConvert
-    +xtoi HEX_CONV_BUFFER_IN, KEY_ID
+    +xtoi HEX_CONV_BUFFER_IN, KEY_ID                             ; convert hex string to byte vector
     beq .goOn
     jmp .convErrIni
 .goOn
-    lda #4
-    sta HEX_CONV_BUFFER_IN
 
+    lda #NONCE_PREFIX_NUM_CHARS                                 ; set maximum input length
+    sta HEX_CONV_BUFFER_IN
     +printStr NONCE_PREFIX_STR
-    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS
+    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS                 ; read input
     jsr printCRLF
     lda HEX_CONV_BUFFER_IN
-    cmp #4
+    cmp #NONCE_PREFIX_NUM_CHARS                                 ; check that the correct number of chars has been entered
     beq .hexConvNonce
     jmp .notLongEnough
 .hexConvNonce
-    +xtoi HEX_CONV_BUFFER_IN, NONCE_PREFIX
+    +xtoi HEX_CONV_BUFFER_IN, NONCE_PREFIX                      ; convert hex string to byte vector
     beq .contReadKey
     jmp .convErrIni
 
 .contReadKey
-    lda #32
+    lda #32                                                     ; set maximum input length
     sta KEY_IN_BUFFER
 
     +printStr KEY_STR
-    +inputStr KEY_IN_BUFFER, PET_KEY_CHARS
+    +inputStr KEY_IN_BUFFER, PET_KEY_CHARS                      ; read input
     jsr printCRLF
 
     lda KEY_IN_BUFFER
-    cmp #MIN_KEY_LENGTH
-    bcc .errAtLeast15
+    cmp #MIN_KEY_LENGTH                                         ; check if minimal length is reached (15 B64 chars => 90 bits sec.)
+    bcs .perfDeriveKey
+    jmp .errAtLeast15
 
-    +chaChaDerive KEY_IN_BUFFER, KEY_ID, DAY_KEY, CHECK_VALUE
+.perfDeriveKey
+    +chaChaDerive KEY_IN_BUFFER, KEY_ID, DAY_KEY, CHECK_VALUE   ; perform key derivation
+
+!ifdef IS_TEST {
+    +printByteVector CHECK_VALUE
+    jsr printCRLF    
+}
+    ; xor nonce prefix to check value
+    ldy #1
+    lda CHECK_VALUE, y
+    eor NONCE_PREFIX, Y
+    sta CHECK_VALUE, y
+    iny
+    lda CHECK_VALUE, y
+    eor NONCE_PREFIX, Y
+    sta CHECK_VALUE, y
+
+!ifdef IS_TEST {
+    +printByteVector CHECK_VALUE
+    jsr printCRLF    
+}
+    lda #CHECK_VAL_NUM_CHARS                                    ; set maximum input length
+    sta HEX_CONV_BUFFER_IN
+    +printStr CHECK_VALUE_STR
+    +inputStr HEX_CONV_BUFFER_IN, PET_HEX_CHARS                 ; read input
+    jsr printCRLF
+    lda HEX_CONV_BUFFER_IN
+    cmp #CHECK_VAL_NUM_CHARS                                    ; check that the correct number of chars has been entered
+    beq .hexConvCheckVal
+    jmp .notLongEnough
+.hexConvCheckVal
+    +xtoi HEX_CONV_BUFFER_IN, CHECK_VALUE_REFERENCE             ; convert hex string to byte vector
+    beq .validateCheckValue
+    jmp .convErrIni
+
+.validateCheckValue
+    +strCmpAddr CHECK_VALUE, CHECK_VALUE_REFERENCE
+    bne .notValidated
+
     lda #IS_INITIALIZED
     sta ALREADY_INITIALIZED
 
-    +printStr CHECK_VALUE_STR
-    +printByteVector CHECK_VALUE
-    jsr printCRLF
-
     rts
+    ; error handling
 .convErrIni
     +printStr .ERR_NO_CONVERT
-    jsr printCRLF
     rts
 .notLongEnough
     +printStr .ERR_NOT_LONG_ENOUGH
-    jsr printCRLF
     rts
 .errAtLeast15
     +printStr .ERR_AT_LEAST_15
-    jsr printCRLF
     rts
-
+.notValidated
+    +printStr .ERR_CHECK_VAL_INCORRECT
+    rts
 
 !ifdef IS_TEST {
 
