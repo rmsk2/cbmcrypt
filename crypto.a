@@ -705,13 +705,22 @@ processBufferCall
 .processingDone
     rts
 
-!macro processBuffer .addrKey, .addrNonce, .bufferAddr, .numBytes {
+!macro processBufferImmediate .addrKey, .addrNonce, .bufferAddr, .numBytes {
     +load16BitImmediate .addrKey, KEY_ADDR
     +load16BitImmediate .addrNonce, NONCE_ADDR
     +load16BitImmediate .bufferAddr, BUFFER_ADDR
     +load16BitImmediate .numBytes, NUM_BUFFER_BYTES
     jsr processBufferCall
 }
+
+!macro processBufferAddr .addrKey, .addrNonce, .bufferAddr, .numBytes {
+    +load16BitImmediate .addrKey, KEY_ADDR
+    +load16BitImmediate .addrNonce, NONCE_ADDR
+    +load16BitImmediate .bufferAddr, BUFFER_ADDR
+    +move16Bit .numBytes, NUM_BUFFER_BYTES
+    jsr processBufferCall
+}
+
 
 !ifdef IS_TEST {
 
@@ -732,14 +741,19 @@ CHACHA_TEST_KEY_ID
 !byte 2
 !byte $11,$22
 
-TEST_BUFFER_LEN
-!byte 114
+VALIDATE_LEN = 114
+
+TEST_BUFFER_STR
+!byte VALIDATE_LEN
 TEST_BUFFER
-!skip 114
+!skip VALIDATE_LEN
+
+.BUFFER_LEN
+!byte <VALIDATE_LEN, >VALIDATE_LEN
 
 chachaTest    
-    +processBuffer CHACHA_TEST_KEY, CHACHA_TEST_NONCE, TEST_BUFFER, 114
-    +printByteVector TEST_BUFFER_LEN
+    +processBufferAddr CHACHA_TEST_KEY, CHACHA_TEST_NONCE, TEST_BUFFER, .BUFFER_LEN
+    +printByteVector TEST_BUFFER_STR
     jsr printCRLF
 
     rts
