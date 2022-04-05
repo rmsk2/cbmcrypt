@@ -675,7 +675,7 @@ BUFFER_COUNT
 ; --------------------------------------------------
 ; processBufferCall encrypts/decrypts the buffer stored at .BUFFER_ADDR using
 ; the key (as string) stored at .KEY_ADDR and the nonce stored (as string) 
-; at .NONCE_ADDR. In the buffer .NUM_BUFFER_BYTES bytes are encrpted.
+; at .NONCE_ADDR. In the buffer .NUM_BUFFER_BYTES bytes are encrypted.
 ; --------------------------------------------------
 processBufferCall
     +load16BitImmediate 0, BUFFER_COUNT
