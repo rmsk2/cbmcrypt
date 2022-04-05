@@ -156,7 +156,8 @@ testCommand
     ;jsr chachaTest
     ;jsr hexConvTest
     ;jsr chaChaDeriveTest
-    jsr chaChaNonceTest
+    ;jsr chaChaNonceTest
+    jsr toStringTest
     rts
 
 }
@@ -682,40 +683,16 @@ initCommand
 
 !ifdef IS_TEST {
 
-.TXT_HEX_TEST
-!byte 5
-!pet "hex: "
-.HEX_CONV_BUFFER_IN
-!byte 0
-!byte 0,0,0,0,0,0,0,0
-.HEX_CONV_BUFFER_OUT
+
+TEST_STR
 !byte 0
 !byte 0,0,0,0
-.COPIED_BUFFER
-!byte 4
-!byte 0,0,0,0
-hexConvTest
-    ; set size of input buffer
-    lda #8
-    sta .HEX_CONV_BUFFER_IN
-    lda #4
-    sta .HEX_CONV_BUFFER_OUT
+.DUMMY
+!pet "897b"
 
-    +printStr .TXT_HEX_TEST
-    +inputStr .HEX_CONV_BUFFER_IN, PET_HEX_CHARS
-    jsr printCRLF
-    +xtoi .HEX_CONV_BUFFER_IN, .HEX_CONV_BUFFER_OUT
-    bne .convErrHex
-
-    +printByteVector .HEX_CONV_BUFFER_OUT
-    jsr printCRLF
-
-    +memset $FF, .COPIED_BUFFER, .COPIED_BUFFER+1
-    +printByteVector .COPIED_BUFFER
-    jsr printCRLF
-
-    +copyByteVector .HEX_CONV_BUFFER_OUT, .COPIED_BUFFER+1
-    +printByteVector .COPIED_BUFFER
+toStringTest
+    +bytesToString .DUMMY, 4, TEST_STR
+    +printStr TEST_STR
     jsr printCRLF
 
     rts

@@ -717,6 +717,39 @@ copyByteVectorCall
     jsr copyByteVectorCall
 }
 
+
+.NUM_BYTES_TO_COPY
+!byte 0
+; --------------------------------------------------
+; This routine copies n bytes of memory to the string stored at the
+; given address. Upon calling this routine n has to be stored in the
+; accu, TEMP_PTR has to hold the string address and TEMP_PTR2 the address
+; of the byte vector in memory.
+; --------------------------------------------------
+bytesToStringCall
+    ldy #0
+    sta (TEMP_PTR), y
+    sta .NUM_BYTES_TO_COPY
+    +inc16Bit TEMP_PTR
+.byteCopyLoop
+    cpy .NUM_BYTES_TO_COPY
+    beq .byteCopyDone
+    lda (TEMP_PTR2), Y
+    sta (TEMP_PTR), Y
+    iny
+    jmp .byteCopyLoop
+.byteCopyDone
+    +dec16Bit TEMP_PTR
+    rts
+
+!macro bytesToString .addrBytes, .byteLen, .addrString {
+    +load16BitImmediate .addrBytes, TEMP_PTR2
+    +load16BitImmediate .addrString, TEMP_PTR
+    lda #.byteLen
+    jsr bytesToStringCall
+}
+
+
 .MEMSET_LEN
 !byte 0
 ; --------------------------------------------------
