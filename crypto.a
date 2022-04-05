@@ -479,7 +479,7 @@ C_15
 !byte 0,0,0,0
 
 
-chaChaInitCall
+chaChaInit
     jsr chaChaSetInitialState
     jsr chacha20BlockFunc
     lda #0
@@ -487,12 +487,6 @@ chaChaInitCall
     
     rts
 
-!macro chaChaInit .addrKey, .addrNonce {
-    jsr chaChaClearKey
-    +copyByteVector .addrKey, CHACHA_KEY
-    +copyByteVector .addrNonce, CHACHA_NONCE    
-    jsr chaChaInitCall
-}
 
 .KEY_STREAM_COUNT
 !byte 0
@@ -563,7 +557,7 @@ chaChaDeriveCall
     +load16BitImmediate CHACHA_KEY, ZERO_PAGE_3
     jsr copyByteVectorCall
 
-    jsr chaChaInitCall
+    jsr chaChaInit
 
     ; copy desired length
     +move16Bit ADDR_PRNG_OUT, ZERO_PAGE_1
@@ -667,6 +661,58 @@ constructNonceCall
     jsr constructNonceCall
 }
 
+
+KEY_ADDR
+!byte 0,0
+NONCE_ADDR
+!byte 0,0
+BUFFER_ADDR
+!byte 0,0
+NUM_BUFFER_BYTES
+!byte 0,0
+BUFFER_COUNT
+!byte 0,0
+; --------------------------------------------------
+; processBufferCall encrypts/decrypts the buffer stored at .BUFFER_ADDR using
+; the key (as string) stored at .KEY_ADDR and the nonce stored (as string) 
+; at .NONCE_ADDR. In the buffer .NUM_BUFFER_BYTES bytes are encrpted.
+; --------------------------------------------------
+processBufferCall
+    +load16BitImmediate 0, BUFFER_COUNT
+    jsr chaChaClearKey
+
+    +move16Bit KEY_ADDR, TEMP_PTR
+    +load16BitImmediate CHACHA_KEY, TEMP_PTR2
+    jsr copyByteVectorCall
+
+    +move16Bit NONCE_ADDR, TEMP_PTR
+    +load16BitImmediate CHACHA_NONCE, TEMP_PTR2
+    jsr copyByteVectorCall
+
+    jsr chaChaInit
+    +move16Bit BUFFER_ADDR, ZERO_PAGE_7    
+.nextByte
+    +cmp16Bit BUFFER_COUNT, NUM_BUFFER_BYTES
+    beq .processingDone
+    jsr chaChaGetNextByte
+    ldy #0
+    eor (ZERO_PAGE_7), Y
+    sta (ZERO_PAGE_7), y
+    +inc16Bit ZERO_PAGE_7
+    +inc16Bit BUFFER_COUNT
+    jmp .nextByte
+
+.processingDone
+    rts
+
+!macro processBuffer .addrKey, .addrNonce, .bufferAddr, .numBytes {
+    +load16BitImmediate .addrKey, KEY_ADDR
+    +load16BitImmediate .addrNonce, NONCE_ADDR
+    +load16BitImmediate .bufferAddr, BUFFER_ADDR
+    +load16BitImmediate .numBytes, NUM_BUFFER_BYTES
+    jsr processBufferCall
+}
+
 !ifdef IS_TEST {
 
 CHACHA_TEST_KEY
@@ -686,18 +732,14 @@ CHACHA_TEST_KEY_ID
 !byte 2
 !byte $11,$22
 
-.KEY_COUNT
-!byte 0,0
-chachaTest    
-    +load16BitImmediate 0, .KEY_COUNT
-    +chaChaInit CHACHA_TEST_KEY, CHACHA_TEST_NONCE
-.nextByte
-    jsr chaChaGetNextByte
-    jsr printByte
-    +inc16Bit .KEY_COUNT
-    +cmp16BitImmediate 114, .KEY_COUNT
-    bne .nextByte
+TEST_BUFFER_LEN
+!byte 114
+TEST_BUFFER
+!skip 114
 
+chachaTest    
+    +processBuffer CHACHA_TEST_KEY, CHACHA_TEST_NONCE, TEST_BUFFER, 114
+    +printByteVector TEST_BUFFER_LEN
     jsr printCRLF
 
     rts
