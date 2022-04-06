@@ -36,6 +36,14 @@ progStart
 !byte 3
 !pet "dir"
 
+.ENCRYPT_COMMAND
+!byte 3
+!pet "enc"
+
+.DECRYPT_COMMAND
+!byte 3
+!pet "dec"
+
 .DEV_COMMAND
 !byte 3
 !pet "dev"
@@ -70,6 +78,8 @@ progStart
 !byte <.DEV_COMMAND, >.DEV_COMMAND, <setDeviceNumberCommand, >setDeviceNumberCommand
 !byte <.STATE_COMMAND, >.STATE_COMMAND, <stateCommand, >stateCommand
 !byte <.INIT_COMMAND, >.INIT_COMMAND, <initCommand, >initCommand
+!byte <.ENCRYPT_COMMAND, >.ENCRYPT_COMMAND, <encryptCommand, >encryptCommand
+!byte <.DECRYPT_COMMAND, >.DECRYPT_COMMAND, <decryptCommand, >decryptCommand
 !ifdef IS_TEST {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -432,6 +442,11 @@ stateCommand
     jmp .printCRLF
 .printInitialized
     +printStr .TXT_YES
+    jsr printCRLF
+    +printStr KEY_ID_STR
+    lda #36
+    jsr CHAROUT
+    +printByteVector KEY_ID
 .printCRLF
     jsr printCRLF
 
@@ -545,18 +560,22 @@ KEY_IN_BUFFER
 
 CHECK_VALUE_REFERENCE
 !byte CHECK_VAL_NUM_CHARS/2
-!byte 0,0,0
+!skip CHECK_VAL_NUM_CHARS/2
 
 CHECK_VALUE
 !byte CHECK_VAL_NUM_CHARS/2
-!byte 0,0,0
+!skip CHECK_VAL_NUM_CHARS/2
 
 KEY_ID
 !byte KEY_ID_NUM_CHARS/2
-!byte 0,0
+!skip KEY_ID_NUM_CHARS/2
 
 NONCE_PREFIX
 !byte NONCE_PREFIX_NUM_CHARS/2
+!skip NONCE_PREFIX_NUM_CHARS/2
+
+MESSAGE_NUMBER
+!byte 2
 !byte 0,0
 
 DAY_KEY
@@ -619,8 +638,8 @@ initCommand
     jsr printCRLF
 
     lda KEY_IN_BUFFER
-    cmp #MIN_KEY_LENGTH                                         ; check if minimal length is reached (15 B64 chars => 90 bits sec.)
-    bcs .perfDeriveKey
+    cmp #MIN_KEY_LENGTH
+    bcs .perfDeriveKey                                          ; check if minimal length is reached (15 B64 chars => 90 bits sec.)
     jmp .errAtLeast15
 
 .perfDeriveKey
@@ -680,6 +699,88 @@ initCommand
 .notValidated
     +printStr .ERR_CHECK_VAL_INCORRECT
     rts
+
+
+TXT_FILE_NAME
+!byte 11
+!pet "file name: "
+
+.TXT_NOT_INITIALIZED
+!byte 16
+!pet "not initialized"
+!byte $0d
+
+TXT_MSG_NUMBER
+!byte 9
+!pet "msg nr.: "
+
+DECIMAL_CHARS
+!byte 10
+!pet "0123456789"
+
+MSG_NUM_CHAR_LEN = 3
+
+MESSAGE_NUMBER_BUFFER_IN
+!byte MSG_NUM_CHAR_LEN
+!skip MSG_NUM_CHAR_LEN
+
+FILE_NAME_SIZE = 16
+
+INPUT_FILE_NAME
+!byte FILE_NAME_SIZE
+!skip FILE_NAME_SIZE
+
+
+enterFileName 
+    +printStr TXT_FILE_NAME
+    lda #FILE_NAME_SIZE
+    sta INPUT_FILE_NAME
+    +inputStr INPUT_FILE_NAME, .ALPHA
+    jsr printCRLF
+
+    rts
+
+
+encryptCommand
+    lda ALREADY_INITIALIZED
+    cmp #NOT_INITIALIZED
+    beq .errNotInitialized
+    jsr enterFileName
+
+    lda #MSG_NUM_CHAR_LEN
+    sta MESSAGE_NUMBER_BUFFER_IN
+    +printStr TXT_MSG_NUMBER
+    +inputStr MESSAGE_NUMBER_BUFFER_IN, DECIMAL_CHARS
+    jsr printCRLF
+    +atoi MESSAGE_NUMBER_BUFFER_IN, MESSAGE_NUMBER+1
+    bne .errNotConvert
+
+    ; ToDo implement encryption
+    +printByteVector MESSAGE_NUMBER
+    jsr printCRLF
+
+    rts
+.errNotInitialized
+    +printStr .TXT_NOT_INITIALIZED
+    rts
+.errNotConvert
+    +printStr .ERR_NO_CONVERT
+    rts
+
+
+decryptCommand
+    lda ALREADY_INITIALIZED
+    cmp #NOT_INITIALIZED
+    beq .errNotInitializedDec
+    jsr enterFileName
+
+    ; ToDo: Implement decryption
+
+    rts
+.errNotInitializedDec
+    +printStr .TXT_NOT_INITIALIZED
+    rts
+
 
 !ifdef IS_TEST {
 
