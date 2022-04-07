@@ -183,7 +183,7 @@ getString
     stx .LEN_OUTPUT
     sty .LEN_ALLOWED
     txa
-    jsr printSpaces                            ; clear input text
+    ;jsr printSpaces                            ; clear input text
     lda #0
     sta .INDEX_OUTPUT                          ; set index in output to 0 
 
