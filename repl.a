@@ -795,6 +795,7 @@ encryptCommand
     +printStr .ERR_FILE_NOT_EMPTY
     rts
 
+
 decryptCommand
     lda ALREADY_INITIALIZED
     cmp #NOT_INITIALIZED
