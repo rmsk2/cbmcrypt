@@ -46,6 +46,8 @@ main
     sta ALREADY_INITIALIZED 
     lda #14
     jsr CHAROUT
+    lda #147
+    jsr CHAROUT
     jsr progStart
     lda #142
     jsr CHAROUT

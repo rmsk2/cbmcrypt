@@ -158,18 +158,37 @@ processCommand
 
 !ifdef IS_TEST {
 
+.TST_BUFFER
+!byte 3
+!pet "319"
+
+.RES_BUFFER
+!byte 2
+.RES_DATA
+!byte 0,0
+
 .TEST_STR
 !byte 5
 !pet "test"
 !byte $0d
 testCommand
-    jsr chachaTest
+    ;jsr chachaTest
     ;jsr hexConvTest
     ;jsr chaChaDeriveTest
     ;jsr chaChaNonceTest
     ;jsr toStringTest
+    lda #3
+    sta .TST_BUFFER
+    +inputStr .TST_BUFFER, DECIMAL_CHARS
+    jsr printCRLF
+    +atoi .TST_BUFFER, .RES_DATA
+    bne .errNotConvertTst
+    +printByteVector .RES_BUFFER
+    jsr printCRLF
     rts
-
+.errNotConvertTst
+    +printStr .ERR_NO_CONVERT
+    rts
 }
 
 ; --------------------------------------------------
@@ -576,6 +595,7 @@ NONCE_PREFIX
 
 MESSAGE_NUMBER
 !byte 2
+MESSAGE_NUMBER_DATA
 !byte 0,0
 
 DAY_KEY
@@ -702,12 +722,17 @@ initCommand
 
 
 TXT_FILE_NAME
-!byte 11
-!pet "file name: "
+!byte 6
+!pet "file: "
 
 .TXT_NOT_INITIALIZED
 !byte 16
 !pet "not initialized"
+!byte $0d
+
+.ERR_FILE_NOT_EMPTY
+!byte 18
+!pet "must not be empty"
 !byte $0d
 
 TXT_MSG_NUMBER
@@ -746,18 +771,18 @@ encryptCommand
     cmp #NOT_INITIALIZED
     beq .errNotInitialized
     jsr enterFileName
+    lda INPUT_FILE_NAME
+    beq .errNotEmpty
 
     lda #MSG_NUM_CHAR_LEN
     sta MESSAGE_NUMBER_BUFFER_IN
     +printStr TXT_MSG_NUMBER
     +inputStr MESSAGE_NUMBER_BUFFER_IN, DECIMAL_CHARS
     jsr printCRLF
-    +atoi MESSAGE_NUMBER_BUFFER_IN, MESSAGE_NUMBER+1
+    +atoi MESSAGE_NUMBER_BUFFER_IN, MESSAGE_NUMBER_DATA
     bne .errNotConvert
 
     ; ToDo implement encryption
-    +printByteVector MESSAGE_NUMBER
-    jsr printCRLF
 
     rts
 .errNotInitialized
@@ -766,19 +791,26 @@ encryptCommand
 .errNotConvert
     +printStr .ERR_NO_CONVERT
     rts
-
+.errNotEmpty
+    +printStr .ERR_FILE_NOT_EMPTY
+    rts
 
 decryptCommand
     lda ALREADY_INITIALIZED
     cmp #NOT_INITIALIZED
     beq .errNotInitializedDec
     jsr enterFileName
+    lda INPUT_FILE_NAME
+    beq .errNotEmptyDec
 
     ; ToDo: Implement decryption
 
     rts
 .errNotInitializedDec
     +printStr .TXT_NOT_INITIALIZED
+    rts
+.errNotEmptyDec
+    +printStr .ERR_FILE_NOT_EMPTY
     rts
 
 
