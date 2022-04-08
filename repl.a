@@ -74,7 +74,7 @@ progStart
 !pet "command not recognized"
 
 .ALPHA
-!byte 76
+!byte 77
 !pet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:-+#=() §$%&@"
 !pet "abcdefghijklmnopqrstuvwxyz"
 
@@ -830,22 +830,78 @@ decryptCommand
     rts
 
 
+EDIT_LINE_LEN
+!byte EDIT_LINE_LENGTH, 0
+
+.EDIT_INPUT_BUFFER
+!byte 0
+!skip 78
+
+.INPUT_LINE_LENGTH
+!byte 0,0
+
 editCommand
+    jsr .calcMaxLineLength
+    sta .EDIT_INPUT_BUFFER
+    +inputStr .EDIT_INPUT_BUFFER, .ALPHA
+    lda .EDIT_INPUT_BUFFER
+    sta .INPUT_LINE_LENGTH
+    beq .editDone
+    +load16BitImmediate .EDIT_INPUT_BUFFER, ZERO_PAGE_1
+    +move16Bit MSG_BUFFER_INSERT_PTR, ZERO_PAGE_3
+    jsr copyByteVectorCall
+    +add16Bit .INPUT_LINE_LENGTH, MSG_BUFFER_INSERT_PTR
+    +add16Bit .INPUT_LINE_LENGTH, MSG_BUFFER_DATA_COUNT
+    jsr printCRLF
+    jmp editCommand
+.editDone
+    rts
+
+
+.TEMP_LINE_LEN
+!byte 0,0
+.TEMP_LINE_LEN2
+!byte 0,0
+.calcMaxLineLength
+    +move16Bit MSG_BUFFER_DATA_COUNT, .TEMP_LINE_LEN
+    +load16BitImmediate MSG_DATA_LEN, .TEMP_LINE_LEN2
+    +sub16Bit .TEMP_LINE_LEN, .TEMP_LINE_LEN2 
+    +cmp16Bit EDIT_LINE_LEN, .TEMP_LINE_LEN2
+    bcs .incompleteLine
+    lda EDIT_LINE_LEN
+    rts
+.incompleteLine
+    lda .TEMP_LINE_LEN2
     rts
 
 
 listCommand
+    +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
+.listLoop
+    +cmp16Bit MSG_BUFFER_INSERT_PTR, ZERO_PAGE_1
+    beq .listDone
+    ldy #0
+    lda (ZERO_PAGE_1),Y
+    jsr CHAROUT
+    +inc16Bit ZERO_PAGE_1
+    jmp .listLoop
+.listDone
+    jsr printCRLF
     rts
 
 
 newCommand
     +load16BitImmediate 0, MSG_BUFFER_DATA_COUNT
+    +load16BitImmediate MSG_BUFFER_DATA, MSG_BUFFER_INSERT_PTR
     rts
 
 MSG_DATA_LEN = 384
 
 MSG_BUFFER_DATA_COUNT 
-!byte 0, 0
+!byte 0,0
+
+MSG_BUFFER_INSERT_PTR
+!byte 0,0
 
 MSG_BUFFER_STRUCT
 MSG_BUFFER_LEN
