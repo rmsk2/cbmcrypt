@@ -56,6 +56,18 @@ progStart
 !byte 3
 !pet "ini"
 
+.EDIT_COMMAND
+!byte 3
+!pet "edt"
+
+.LIST_COMMAND
+!byte 3
+!pet "lst"
+
+.NEW_COMMAND
+!byte 3
+!pet "new"
+
 
 .COMMAND_NOT_RECOGNIZED
 !byte 22
@@ -80,6 +92,9 @@ progStart
 !byte <.INIT_COMMAND, >.INIT_COMMAND, <initCommand, >initCommand
 !byte <.ENCRYPT_COMMAND, >.ENCRYPT_COMMAND, <encryptCommand, >encryptCommand
 !byte <.DECRYPT_COMMAND, >.DECRYPT_COMMAND, <decryptCommand, >decryptCommand
+!byte <.EDIT_COMMAND, >.EDIT_COMMAND, <editCommand, >editCommand
+!byte <.LIST_COMMAND, >.LIST_COMMAND, <listCommand, >listCommand
+!byte <.NEW_COMMAND, >.NEW_COMMAND, <newCommand, >newCommand
 !ifdef IS_TEST {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -814,6 +829,33 @@ decryptCommand
     +printStr .ERR_FILE_NOT_EMPTY
     rts
 
+
+editCommand
+    rts
+
+
+listCommand
+    rts
+
+
+newCommand
+    +load16BitImmediate 0, MSG_BUFFER_DATA_COUNT
+    rts
+
+MSG_DATA_LEN = 384
+
+MSG_BUFFER_DATA_COUNT 
+!byte 0, 0
+
+MSG_BUFFER_STRUCT
+MSG_BUFFER_LEN
+!byte 0,0
+MSG_BUFFER_KEY_ID
+!byte 0,0
+MSG_BUFFER_NONCE
+!skip 12
+MSG_BUFFER_DATA
+!skip MSG_DATA_LEN
 
 !ifdef IS_TEST {
 

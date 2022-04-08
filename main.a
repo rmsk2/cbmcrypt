@@ -48,6 +48,7 @@ main
     jsr CHAROUT
     lda #147
     jsr CHAROUT
+    jsr newCommand
     jsr progStart
     lda #142
     jsr CHAROUT
