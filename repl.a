@@ -74,8 +74,8 @@ progStart
 !pet "command not recognized"
 
 .ALPHA
-!byte 77
-!pet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:-+#=() §$%&@"
+!byte 80
+!pet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:,!-+#=() §$%&@?"
 !pet "abcdefghijklmnopqrstuvwxyz"
 
 
@@ -613,6 +613,10 @@ MESSAGE_NUMBER
 MESSAGE_NUMBER_DATA
 !byte 0,0
 
+MESSAGE_NONCE
+!byte 12
+!byte 0,0,0,0,0,0,0,0,0,0,0,0
+
 DAY_KEY
 !byte 32
 !skip 32
@@ -621,6 +625,9 @@ HEX_CONV_BUFFER_IN
 !byte 6
 !byte 0,0,0,0,0,0
 
+; --------------------------------------------------
+; initCommand
+; --------------------------------------------------
 initCommand
     lda #NOT_INITIALIZED
     sta ALREADY_INITIALIZED
@@ -750,6 +757,16 @@ TXT_FILE_NAME
 !pet "must not be empty"
 !byte $0d
 
+.ERR_NOTHING_TO_ENCRYPT
+!byte 19
+!pet "nothing to encrypt"
+!byte $0d
+
+.ERR_MESSAGE_NOT_EMPTY
+!byte 14
+!pet "msg not empty"
+!byte $0d
+
 TXT_MSG_NUMBER
 !byte 9
 !pet "msg nr.: "
@@ -771,6 +788,10 @@ INPUT_FILE_NAME
 !skip FILE_NAME_SIZE
 
 
+; --------------------------------------------------
+; This routine asks the user for a file name. The entered values
+; is stored in the string INPUT_FILE_NAME.
+; --------------------------------------------------
 enterFileName 
     +printStr TXT_FILE_NAME
     lda #FILE_NAME_SIZE
@@ -781,23 +802,49 @@ enterFileName
     rts
 
 
+; --------------------------------------------------
+; encryptCommand encrypts the data contained in MSG_BUFFER_DATA and then
+; saves the encrpyted data on a floppy. The traget file name and a 
+; unique message number have to be enteredby the user. This command
+; requires the init command to have been successfully completed before
+; performing an encryption.
+; --------------------------------------------------
 encryptCommand
     lda ALREADY_INITIALIZED
     cmp #NOT_INITIALIZED
-    beq .errNotInitialized
+    bne .checkEmptyMessage
+    jmp .errNotInitialized
+
+.checkEmptyMessage
+    lda MSG_BUFFER_DATA_COUNT
+    bne .doEnterFileNameEnc
+    jmp .errNothingToEncrypt
+
+.doEnterFileNameEnc
     jsr enterFileName
     lda INPUT_FILE_NAME
-    beq .errNotEmpty
+    bne .doEnterMsgNum
+    jmp .errNotEmpty
 
+.doEnterMsgNum
     lda #MSG_NUM_CHAR_LEN
     sta MESSAGE_NUMBER_BUFFER_IN
     +printStr TXT_MSG_NUMBER
     +inputStr MESSAGE_NUMBER_BUFFER_IN, DECIMAL_CHARS
     jsr printCRLF
     +atoi MESSAGE_NUMBER_BUFFER_IN, MESSAGE_NUMBER_DATA
-    bne .errNotConvert
+    beq .doEncrypt
+    jmp .errNotConvert
 
-    ; ToDo implement encryption
+.doEncrypt
+    +constructNonce NONCE_PREFIX, MESSAGE_NUMBER, MESSAGE_NONCE
+    +processBufferAddr DAY_KEY, MESSAGE_NONCE, MSG_BUFFER_DATA, MSG_BUFFER_DATA_COUNT
+
+    +copyByteVector MESSAGE_NONCE, MSG_BUFFER_NONCE
+    +copyByteVector KEY_ID, MSG_BUFFER_KEY_ID
+    jsr saveEncryptedFile
+    cmp #DISK_IO_ERR
+    beq .errSavingFile
 
     rts
 .errNotInitialized
@@ -809,26 +856,104 @@ encryptCommand
 .errNotEmpty
     +printStr .ERR_FILE_NOT_EMPTY
     rts
+.errNothingToEncrypt
+    +printStr .ERR_NOTHING_TO_ENCRYPT
+    rts 
+.errSavingFile
+    ; decrypt message again
+    +processBufferAddr DAY_KEY, MESSAGE_NONCE, MSG_BUFFER_DATA, MSG_BUFFER_DATA_COUNT
+    +printStr .ERR_SAVING_FILE
+    rts 
 
 
+.ERR_SAVING_FILE
+!byte 11
+!pet "save error"
+!byte $0d
+
+; --------------------------------------------------
+; saveEncryptedFile saves the message structure stored at MSG_BUFFER_STRUCT to the
+; file named through INPUT_FILE_NAME using the device number stored at DEVICE_NUM.
+; --------------------------------------------------
+saveEncryptedFile
+    rts
+
+.ERR_LOADING_FILE
+!byte 11
+!pet "load error"
+!byte $0d
+
+.ERR_WRONG_KEY_ID
+!byte 13
+!pet "wrong key id"
+!byte $0d
+
+; --------------------------------------------------
+; loadEncryptedFile loads an encrypted file from disk to the location MSG_BUFFER_STRUCT.
+; The file is given through INPUT_FILE_NAME using the device number stored at DEVICE_NUM.
+; --------------------------------------------------
+loadEncryptedFile
+    rts
+
+
+KEY_ID_TEMP
+!byte KEY_ID_NUM_CHARS/2
+!skip KEY_ID_NUM_CHARS/2
+; --------------------------------------------------
+; decryptCommand loads a file from floppy to MSG_BUFFER_STRUCT and then
+; decrypts and shows the message. This command requires the init command
+; to have been successfully completed before performing a decryption.
+; --------------------------------------------------
 decryptCommand
     lda ALREADY_INITIALIZED
     cmp #NOT_INITIALIZED
-    beq .errNotInitializedDec
+    bne .checkForMsgEmpty
+    jmp .errNotInitializedDec
+
+.checkForMsgEmpty
+    +cmp16BitImmediate 0, MSG_BUFFER_DATA_COUNT
+    beq .enterFileNameDec
+    jmp .bufferNotEmpty
+
+.enterFileNameDec
     jsr enterFileName
     lda INPUT_FILE_NAME
-    beq .errNotEmptyDec
+    bne .performLoad
+    jmp .errNotEmptyDec
 
-    ; ToDo: Implement decryption
+.performLoad
+    jsr loadEncryptedFile
+    cmp #DISK_IO_OK
+    beq .processLoadedData
+    jmp .errLoadingFile
 
-    rts
+.processLoadedData
+    +bytesToString MSG_BUFFER_KEY_ID, KEY_ID_NUM_CHARS/2, KEY_ID_TEMP   
+    +strCmpAddr KEY_ID, KEY_ID_TEMP
+    bne .wrongKey
+
+    +bytesToString MSG_BUFFER_NONCE, 12, MESSAGE_NONCE
+
+    +processBufferAddr DAY_KEY, MESSAGE_NONCE, MSG_BUFFER_DATA, MSG_BUFFER_DATA_COUNT
+    jmp listCommand
+
 .errNotInitializedDec
     +printStr .TXT_NOT_INITIALIZED
     rts
 .errNotEmptyDec
     +printStr .ERR_FILE_NOT_EMPTY
     rts
-
+.errLoadingFile
+    +printStr .ERR_LOADING_FILE
+    rts
+.bufferNotEmpty
+    +printStr .ERR_MESSAGE_NOT_EMPTY
+    rts
+.wrongKey
+    +printStr .ERR_WRONG_KEY_ID
+    +printByteVector KEY_ID_TEMP
+    jsr printCRLF
+    rts
 
 EDIT_LINE_LEN
 !byte EDIT_LINE_LENGTH, 0
@@ -840,6 +965,9 @@ EDIT_LINE_LEN
 .INPUT_LINE_LENGTH
 !byte 0,0
 
+; --------------------------------------------------
+; editCommand
+; --------------------------------------------------
 editCommand
     jsr .calcMaxLineLength
     sta .EDIT_INPUT_BUFFER
@@ -862,6 +990,12 @@ editCommand
 !byte 0,0
 .TEMP_LINE_LEN2
 !byte 0,0
+; --------------------------------------------------
+; .calcMaxLineLength calculates whether there is room for a full line
+; of EDIT_LINE_LEN chaarcters in MSG_BUFFER_DATA. It accordingly returns
+; the number of characters that can still be entered in the current line.
+; This value is returned in the accu.
+; --------------------------------------------------
 .calcMaxLineLength
     +move16Bit MSG_BUFFER_DATA_COUNT, .TEMP_LINE_LEN
     +load16BitImmediate MSG_DATA_LEN, .TEMP_LINE_LEN2
@@ -875,6 +1009,9 @@ editCommand
     rts
 
 
+; --------------------------------------------------
+; listCommand
+; --------------------------------------------------
 listCommand
     +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
 .listLoop
@@ -897,19 +1034,16 @@ newCommand
 
 MSG_DATA_LEN = 384
 
-MSG_BUFFER_DATA_COUNT 
-!byte 0,0
-
 MSG_BUFFER_INSERT_PTR
 !byte 0,0
 
 MSG_BUFFER_STRUCT
-MSG_BUFFER_LEN
-!byte 0,0
 MSG_BUFFER_KEY_ID
 !byte 0,0
 MSG_BUFFER_NONCE
 !skip 12
+MSG_BUFFER_DATA_COUNT 
+!byte 0,0
 MSG_BUFFER_DATA
 !skip MSG_DATA_LEN
 

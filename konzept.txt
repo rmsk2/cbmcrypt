@@ -7,10 +7,10 @@ Keysheet, pro Tag
 
 File format
 -----------
-                          12
-               |        Nonce         |
-   2       2           2         10       0-384
-Length | KeyID | Nonce-Prefix | Nonce | Ciphertext
+                   12
+        |         Nonce        |
+    2           2          10       2       1-384
+| KeyID | Nonce-Prefix | Nonce | Length | Ciphertext
 
 Initialisierung (Eingabe: KeyID, Key, Nonce-Prefix)
 ---------------------------------------------------
