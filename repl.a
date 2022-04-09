@@ -846,6 +846,8 @@ encryptCommand
     cmp #DISK_IO_ERR
     beq .errSavingFile
 
+    jsr newCommand
+
     rts
 .errNotInitialized
     +printStr .TXT_NOT_INITIALIZED
@@ -871,11 +873,57 @@ encryptCommand
 !pet "save error"
 !byte $0d
 
+.PREFIX_OVERWRITE
+!byte 3
+!tx "@0:"
+.POSTFIX_SEQ
+!byte 4
+!tx ",S,W"
+
+.WRITE_FILE_NAME
+!byte 0
+!skip 40
+
+IO_FILE_NUM = 2
+
+.FILE_LEN_TEMP
+!byte 0,0
 ; --------------------------------------------------
 ; saveEncryptedFile saves the message structure stored at MSG_BUFFER_STRUCT to the
 ; file named through INPUT_FILE_NAME using the device number stored at DEVICE_NUM.
 ; --------------------------------------------------
 saveEncryptedFile
+    lda #0
+    sta .WRITE_FILE_NAME
+    +strCpy .PREFIX_OVERWRITE, .WRITE_FILE_NAME
+    +strCat INPUT_FILE_NAME, .WRITE_FILE_NAME
+    +strCat .POSTFIX_SEQ, .WRITE_FILE_NAME
+
+    +openChannel IO_FILE_NUM, DEVICE_NUM, 2, .WRITE_FILE_NAME
+    bcs .saveError
+
+    +move16Bit MSG_BUFFER_DATA_COUNT, .FILE_LEN_TEMP
+    +add16BitImmediate 16, .FILE_LEN_TEMP
+    +writeBufferAddr IO_FILE_NUM, MSG_BUFFER_STRUCT, .FILE_LEN_TEMP
+    cmp #DISK_IO_OK
+    bne .saveError
+
+    ;jsr readAndEvalErrorChannel
+    ;+printStr ERR_BYTE_COUNTER
+
+    lda #IO_FILE_NUM
+    jsr CLOSE
+
+    lda #DISK_IO_OK
+    rts
+.saveError
+    lda #IO_FILE_NUM
+    jsr CLOSE
+
+    jsr readAndEvalErrorChannel
+    +printStr ERR_BYTE_COUNTER
+
+    lda #DISK_IO_ERR
     rts
 
 .ERR_LOADING_FILE
@@ -888,13 +936,96 @@ saveEncryptedFile
 !pet "wrong key id"
 !byte $0d
 
+.ERR_INVALID_FORMAT
+!byte 15
+!pet "format invalid"
+!byte $0d
+
+.ERR_INVALID_HEADER
+!byte 15
+!pet "header invalid"
+!byte $0d
+
+.ERR_DATA_LOAD
+!byte 20
+!pet "unable to load data"
+!byte $0d
+
+.POSTFIX_SEQ_READ
+!byte 4
+!tx ",S,R"
+
+.READ_FILE_NAME
+!byte 0
+!skip 40
+.READ_LEN
+!byte 0,0
+.TEMP_VAL_245
+!byte 0
 ; --------------------------------------------------
 ; loadEncryptedFile loads an encrypted file from disk to the location MSG_BUFFER_STRUCT.
 ; The file is given through INPUT_FILE_NAME using the device number stored at DEVICE_NUM.
 ; --------------------------------------------------
 loadEncryptedFile
+    lda #0
+    sta .READ_FILE_NAME
+    +strCpy INPUT_FILE_NAME, .READ_FILE_NAME
+    +strCat .POSTFIX_SEQ_READ, .READ_FILE_NAME
+
+    +openChannel IO_FILE_NUM, DEVICE_NUM, 2, .READ_FILE_NAME
+    bcc .loadHeader
+    jmp .loadError
+
+.loadHeader
+    ; load header
+    +load16BitImmediate 16, .READ_LEN
+    +readBufferAddr IO_FILE_NUM, MSG_BUFFER_STRUCT, .READ_LEN
+    cmp #DISK_IO_OK
+    beq .checkMessageLength
+    +printStr .ERR_INVALID_HEADER
+    jmp .loadError
+
+.checkMessageLength
+    ; check message length is <= MSG_DATA_LEN
+    +cmp16BitImmediate MSG_DATA_LEN, MSG_BUFFER_DATA_COUNT
+    bcs .loadData
+    jsr newCommand                                                ; invalidate loaded header data
+    jmp .invalidLength
+
+.loadData
+    +readBufferAddr IO_FILE_NUM, MSG_BUFFER_DATA, MSG_BUFFER_DATA_COUNT
+
+    sta .TEMP_VAL_245
+    lda RBUFFER_COUNTER
+    jsr printByteCRLF
+    lda RBUFFER_COUNTER+1
+    jsr printByteCRLF
+    lda .TEMP_VAL_245
+
+
+    cmp #DISK_IO_OK
+    beq .cleanUpStuff
+    +printStr .ERR_DATA_LOAD
+    jmp .loadError    
+
+.cleanUpStuff
+    lda #IO_FILE_NUM
+    jsr CLOSE
+
+    lda #DISK_IO_OK
     rts
 
+.invalidLength
+    +printStr .ERR_INVALID_FORMAT   
+.loadError
+    lda #IO_FILE_NUM
+    jsr CLOSE
+
+    jsr readAndEvalErrorChannel
+    +printStr ERR_BYTE_COUNTER
+
+    lda #DISK_IO_ERR
+    rts
 
 KEY_ID_TEMP
 !byte KEY_ID_NUM_CHARS/2

@@ -372,10 +372,17 @@ WBUFFER_COUNTER                           ; counter used for output
 ;
 ; return DISK_OK_OK in accu if everything is OK
 ; --------------------------------------------------
-writeBuffer
+writeBufferCall
     +writeDataRaw WBUFFER_LEN, WBUFFER_COUNTER, ZERO_PAGE_7
     rts
 
+
+!macro writeBufferAddr .fileNum, .bufferAddr, .bufferLenAddr {
+    +move16Bit .bufferLenAddr, WBUFFER_LEN
+    +load16BitImmediate .bufferAddr, ZERO_PAGE_7
+    ldx #.fileNum
+    jsr writeBufferCall
+} 
 
 RBUFFER_LEN
 !byte 0,0
@@ -387,10 +394,17 @@ RBUFFER_COUNTER                          ; counter used for input
 ;
 ; return DISK_OK_OK in accu if everything is OK
 ; --------------------------------------------------
-readBuffer
+readBufferCall
     +readDataRaw RBUFFER_LEN, RBUFFER_COUNTER, ZERO_PAGE_7
     rts
 
+
+!macro readBufferAddr .fileNum, .bufferAddr, .bufferLenAddr {
+    +move16Bit .bufferLenAddr, RBUFFER_LEN
+    +load16BitImmediate .bufferAddr, ZERO_PAGE_7
+    ldx #.fileNum
+    jsr readBufferCall
+}
 
 OPEN_FILE_NAME_EMPTY
 !byte 0
