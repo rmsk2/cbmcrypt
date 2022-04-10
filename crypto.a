@@ -371,8 +371,8 @@ chacha20BlockFunc
     rts
 
 chaChaClearKey
-    +memset 0, 32, CHACHA_KEY
-    +memset 0, 12, CHACHA_NONCE
+    +memsetImmediate 0, 32, CHACHA_KEY
+    +memsetImmediate 0, 12, CHACHA_NONCE
     rts
 
 
