@@ -4,8 +4,8 @@ CHAROUT = $FFD2
 
 !source "platform.a"
 
-entryPoint
-    jmp main
+; the SYS command jumps to this instruction
+jmp entryPoint
 
 !ifdef C64 {
 !source "c64.a"
@@ -22,6 +22,17 @@ entryPoint
 !ifdef C128 {
 !source "c128.a"
 }
+
+; When targetting the C128 this routine has to reside in memory below $4000
+entryPoint
+!ifdef TARGET_C128 {
+    ; switch out BASIC ROM, because otherwise we do not have enough
+    ; RAM ... on the C128 ... !!!!
+    lda #%00001110
+    sta $D501
+    sta $FF01
+}
+    jmp main
 
 FAST_MUL = 1
 IS_TEST =  1
@@ -52,4 +63,10 @@ main
     jsr progStart
     lda #142
     jsr CHAROUT
+!ifdef TARGET_C128 {
+    ; turn BASIC ROMs on again
+    lda #%00000000
+    sta $D501
+    sta $FF01
+}
     rts
