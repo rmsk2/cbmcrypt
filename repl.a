@@ -908,9 +908,6 @@ saveEncryptedFile
     cmp #DISK_IO_OK
     bne .saveError
 
-    ;jsr readAndEvalErrorChannel
-    ;+printStr ERR_BYTE_COUNTER
-
     lda #IO_FILE_NUM
     jsr CLOSE
 
