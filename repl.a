@@ -72,6 +72,15 @@ progStart
 !byte 3
 !pet "new"
 
+!ifdef TARGET_C128 {
+.VDC_COMMAND
+!byte 3
+!pet "vdc"
+
+.VIC_COMMAND
+!byte 3
+!pet "vic"
+}
 
 .COMMAND_NOT_RECOGNIZED
 !byte 22
@@ -100,6 +109,10 @@ progStart
 !byte <.LIST_COMMAND, >.LIST_COMMAND, <listCommand, >listCommand
 !byte <.NEW_COMMAND, >.NEW_COMMAND, <newCommand, >newCommand
 !byte <.CLR_COMMAND, >.CLR_COMMAND, <clrCommand, >clrCommand
+!ifdef TARGET_C128 {
+!byte <.VDC_COMMAND, >.VDC_COMMAND, <vdcCommand, >vdcCommand
+!byte <.VIC_COMMAND, >.VIC_COMMAND, <vicCommand, >vicCommand   
+}
 !ifdef IS_TEST {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -218,6 +231,25 @@ clrCommand
     lda #147
     jsr CHAROUT
     rts
+
+!ifdef TARGET_C128 {
+; --------------------------------------------------
+; vdcCommand
+; --------------------------------------------------
+vdcCommand
+    lda #EDIT_LINE_LENGTH_80_COLUMN
+    sta EDIT_LINE_LEN
+    rts
+
+
+; --------------------------------------------------
+; vicCommand
+; --------------------------------------------------
+vicCommand
+    lda #EDIT_LINE_LENGTH
+    sta EDIT_LINE_LEN
+    rts
+}
 
 ; --------------------------------------------------
 ; helpCommand
@@ -1126,9 +1158,13 @@ editCommand
     jsr printCRLF
     jmp editCommand
 .editDone
+    jsr printCRLF
     rts
 
 
+.EDIT_BLANKS
+!byte 3
+!pet "  :"
 .TEMP_LINE_LEN
 !byte 0,0
 .TEMP_LINE_LEN2
@@ -1142,7 +1178,18 @@ editCommand
 .calcMaxLineLength
     +move16Bit MSG_BUFFER_DATA_COUNT, .TEMP_LINE_LEN
     +load16BitImmediate MSG_DATA_LEN, .TEMP_LINE_LEN2
-    +sub16Bit .TEMP_LINE_LEN, .TEMP_LINE_LEN2 
+    +sub16Bit .TEMP_LINE_LEN, .TEMP_LINE_LEN2
+
+    +cmp16BitImmediate 80, .TEMP_LINE_LEN2
+    bcc .printBlanks
+    lda .TEMP_LINE_LEN2
+    jsr printByte 
+    lda #58
+    jsr CHAROUT
+    jmp .lastLineCheck
+.printBlanks
+    +printStr .EDIT_BLANKS
+.lastLineCheck
     +cmp16Bit EDIT_LINE_LEN, .TEMP_LINE_LEN2
     bcs .incompleteLine
     lda EDIT_LINE_LEN

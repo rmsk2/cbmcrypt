@@ -34,6 +34,15 @@ entryPoint
 }
     jmp main
 
+mainDone
+!ifdef TARGET_C128 {
+    ; turn BASIC ROMs on again
+    lda #%00000000
+    sta $D501
+    sta $FF01
+}
+    rts
+
 FAST_MUL = 1
 IS_TEST =  1
 
@@ -63,10 +72,7 @@ main
     jsr progStart
     lda #142
     jsr CHAROUT
-!ifdef TARGET_C128 {
-    ; turn BASIC ROMs on again
-    lda #%00000000
-    sta $D501
-    sta $FF01
-}
-    rts
+
+    ; save 2 bytes on Stack for the whole runtime
+    ; of cbmcrypt
+    jmp mainDone
