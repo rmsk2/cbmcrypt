@@ -984,8 +984,8 @@ saveEncryptedFile
 !byte $0d
 
 .ERR_INVALID_HEADER
-!byte 15
-!pet "header invalid"
+!byte 22
+!pet "unable to load header"
 !byte $0d
 
 .ERR_DATA_LOAD
