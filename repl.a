@@ -1180,7 +1180,7 @@ editCommand
     +load16BitImmediate MSG_DATA_LEN, .TEMP_LINE_LEN2
     +sub16Bit .TEMP_LINE_LEN, .TEMP_LINE_LEN2
 
-    +cmp16BitImmediate 80, .TEMP_LINE_LEN2
+    +cmp16BitImmediate 255, .TEMP_LINE_LEN2
     bcc .printBlanks
     lda .TEMP_LINE_LEN2
     jsr printByte 
