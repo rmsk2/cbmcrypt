@@ -861,7 +861,7 @@ encryptCommand
     jmp .errNotInitialized
 
 .checkEmptyMessage
-    lda MSG_BUFFER_DATA_COUNT
+    +cmp16BitImmediate 0, MSG_BUFFER_DATA_COUNT
     bne .doEnterFileNameEnc
     jmp .errNothingToEncrypt
 
