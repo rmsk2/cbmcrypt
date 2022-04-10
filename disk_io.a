@@ -297,6 +297,7 @@ readBlockWithErrorChannel
     bcs .readError
     pha
     jsr READST                                     ; end reached or error?
+    and #%10111111                                 ; mask out bit 6 = 64 => Ignore EOF
     bne .readErrorRestoreStack
     pla
     ldy #0

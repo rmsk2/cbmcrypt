@@ -994,17 +994,9 @@ loadEncryptedFile
 
 .loadData
     +readBufferAddr IO_FILE_NUM, MSG_BUFFER_DATA, MSG_BUFFER_DATA_COUNT
-
-    sta .TEMP_VAL_245
-    lda RBUFFER_COUNTER
-    jsr printByteCRLF
-    lda RBUFFER_COUNTER+1
-    jsr printByteCRLF
-    lda .TEMP_VAL_245
-
-
     cmp #DISK_IO_OK
     beq .cleanUpStuff
+
     +printStr .ERR_DATA_LOAD
     jmp .loadError    
 
@@ -1030,6 +1022,8 @@ loadEncryptedFile
 KEY_ID_TEMP
 !byte KEY_ID_NUM_CHARS/2
 !skip KEY_ID_NUM_CHARS/2
+.DEC_HELP
+!byte 0,0
 ; --------------------------------------------------
 ; decryptCommand loads a file from floppy to MSG_BUFFER_STRUCT and then
 ; decrypts and shows the message. This command requires the init command
@@ -1061,11 +1055,18 @@ decryptCommand
 .processLoadedData
     +bytesToString MSG_BUFFER_KEY_ID, KEY_ID_NUM_CHARS/2, KEY_ID_TEMP   
     +strCmpAddr KEY_ID, KEY_ID_TEMP
-    bne .wrongKey
+    beq .keyIDCorrect
+    jmp .wrongKey
 
+.keyIDCorrect
     +bytesToString MSG_BUFFER_NONCE, 12, MESSAGE_NONCE
-
     +processBufferAddr DAY_KEY, MESSAGE_NONCE, MSG_BUFFER_DATA, MSG_BUFFER_DATA_COUNT
+
+    ; set pointer to insert position
+    +load16BitImmediate MSG_BUFFER_DATA, .DEC_HELP
+    +add16Bit MSG_BUFFER_DATA_COUNT, .DEC_HELP
+    +move16Bit .DEC_HELP, MSG_BUFFER_INSERT_PTR
+
     jmp listCommand
 
 .errNotInitializedDec
@@ -1084,6 +1085,7 @@ decryptCommand
     +printStr .ERR_WRONG_KEY_ID
     +printByteVector KEY_ID_TEMP
     jsr printCRLF
+    jsr newCommand                                      ; clear loaded message
     rts
 
 EDIT_LINE_LEN
@@ -1140,18 +1142,22 @@ editCommand
     rts
 
 
+.LIST_COUNT
+!byte 0,0
 ; --------------------------------------------------
 ; listCommand
 ; --------------------------------------------------
 listCommand
     +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
+    +load16BitImmediate 0, .LIST_COUNT
 .listLoop
-    +cmp16Bit MSG_BUFFER_INSERT_PTR, ZERO_PAGE_1
+    +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
     beq .listDone
     ldy #0
     lda (ZERO_PAGE_1),Y
     jsr CHAROUT
     +inc16Bit ZERO_PAGE_1
+    +inc16Bit .LIST_COUNT
     jmp .listLoop
 .listDone
     jsr printCRLF
