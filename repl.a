@@ -28,6 +28,10 @@ progStart
 !byte 1
 !pet "h"
 
+.CLR_COMMAND
+!byte 3
+!pet "clr"
+
 .TEST_COMMAND
 !byte 3
 !pet "tst"
@@ -95,6 +99,7 @@ progStart
 !byte <.EDIT_COMMAND, >.EDIT_COMMAND, <editCommand, >editCommand
 !byte <.LIST_COMMAND, >.LIST_COMMAND, <listCommand, >listCommand
 !byte <.NEW_COMMAND, >.NEW_COMMAND, <newCommand, >newCommand
+!byte <.CLR_COMMAND, >.CLR_COMMAND, <clrCommand, >clrCommand
 !ifdef IS_TEST {
 !byte <.TEST_COMMAND, >.TEST_COMMAND, <testCommand, >testCommand    
 }
@@ -205,6 +210,14 @@ testCommand
     +printStr .ERR_NO_CONVERT
     rts
 }
+
+; --------------------------------------------------
+; clrCommand
+; --------------------------------------------------
+clrCommand
+    lda #147
+    jsr CHAROUT
+    rts
 
 ; --------------------------------------------------
 ; helpCommand
