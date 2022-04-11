@@ -44,7 +44,8 @@ mainDone
     rts
 
 FAST_MUL = 1
-IS_TEST =  1
+;IS_TEST =  1
+SHOW_CHECK_VALUE = 1
 
 !zone arith
 !source "arith16.a"

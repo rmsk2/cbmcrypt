@@ -746,7 +746,7 @@ initCommand
     eor NONCE_PREFIX, Y
     sta CHECK_VALUE, y
 
-!ifdef IS_TEST {
+!ifdef SHOW_CHECK_VALUE {
     +printByteVector CHECK_VALUE
     jsr printCRLF    
 }
