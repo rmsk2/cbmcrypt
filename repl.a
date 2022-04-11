@@ -72,6 +72,10 @@ progStart
 !byte 3
 !pet "new"
 
+.INFO_COMMAND
+!byte 3
+!pet "inf"
+
 !ifdef TARGET_C128 {
 .VDC_COMMAND
 !byte 3
@@ -109,6 +113,7 @@ progStart
 !byte <.LIST_COMMAND, >.LIST_COMMAND, <listCommand, >listCommand
 !byte <.NEW_COMMAND, >.NEW_COMMAND, <newCommand, >newCommand
 !byte <.CLR_COMMAND, >.CLR_COMMAND, <clrCommand, >clrCommand
+!byte <.INFO_COMMAND, >.INFO_COMMAND, <infoCommand, >infoCommand
 !ifdef TARGET_C128 {
 !byte <.VDC_COMMAND, >.VDC_COMMAND, <vdcCommand, >vdcCommand
 !byte <.VIC_COMMAND, >.VIC_COMMAND, <vicCommand, >vicCommand   
@@ -997,6 +1002,8 @@ saveEncryptedFile
 !byte 4
 !tx ",S,R"
 
+FILE_HEADER_LEN = 16
+
 .READ_FILE_NAME
 !byte 0
 !skip 40
@@ -1020,7 +1027,7 @@ loadEncryptedFile
 
 .loadHeader
     ; load header
-    +load16BitImmediate 16, .READ_LEN
+    +load16BitImmediate FILE_HEADER_LEN, .READ_LEN
     +readBufferAddr IO_FILE_NUM, MSG_BUFFER_STRUCT, .READ_LEN
     cmp #DISK_IO_OK
     beq .checkMessageLength
@@ -1129,6 +1136,82 @@ decryptCommand
     jsr printCRLF
     jsr newCommand                                      ; clear loaded message
     rts
+
+
+.INFO_BUFFER
+!skip FILE_HEADER_LEN
+
+.INFO_KEY_ID
+!byte 0
+!byte 0,0
+
+.TXT_KEY_ID
+!byte 9
+!pet "key id: $"
+
+.TXT_MSG_LEN
+!byte 10
+!pet "msg len: $"
+
+; --------------------------------------------------
+; infoCommand
+; --------------------------------------------------
+infoCommand
+    jsr enterFileName
+    lda INPUT_FILE_NAME
+    bne .makeFileName
+    jmp .errNotEmptyInfo
+
+.makeFileName
+    lda #0
+    sta .READ_FILE_NAME
+    +strCpy INPUT_FILE_NAME, .READ_FILE_NAME
+    +strCat .POSTFIX_SEQ_READ, .READ_FILE_NAME
+
+    +openChannel IO_FILE_NUM, DEVICE_NUM, 2, .READ_FILE_NAME
+    bcc .loadHeaderInfo
+    jmp .loadErrorInfo
+
+.loadHeaderInfo
+    ; load header
+    +load16BitImmediate FILE_HEADER_LEN, .READ_LEN
+    +readBufferAddr IO_FILE_NUM, .INFO_BUFFER, .READ_LEN
+    cmp #DISK_IO_OK
+    beq .printInfo
+    +printStr .ERR_INVALID_HEADER
+    jmp .loadErrorInfo
+
+.printInfo
+    +printStr .TXT_KEY_ID
+    +bytesToString .INFO_BUFFER, 2, .INFO_KEY_ID
+    +printByteVector .INFO_KEY_ID
+    jsr printCRLF
+
+    +printStr .TXT_MSG_LEN
+    lda .INFO_BUFFER+15
+    jsr printByte
+    lda .INFO_BUFFER+14
+    jsr printByte
+    jsr printCRLF
+
+    lda #IO_FILE_NUM
+    jsr CLOSE
+
+    rts
+.errNotEmptyInfo
+    +printStr .ERR_FILE_NOT_EMPTY
+    rts
+.loadErrorInfo
+    lda #IO_FILE_NUM
+    jsr CLOSE
+
+    jsr readAndEvalErrorChannel
+    +printStr ERR_BYTE_COUNTER
+    +printStr .ERR_DATA_LOAD
+
+    lda #DISK_IO_ERR
+    rts
+
 
 EDIT_LINE_LEN
 !byte EDIT_LINE_LENGTH, 0
