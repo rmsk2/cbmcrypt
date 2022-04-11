@@ -4,9 +4,23 @@ IS_INITIALIZED = 1
 MIN_KEY_LENGTH = 15
 
 progStart
-    ;jsr showTitleScreen
+    jsr showTitleScreen
     jmp readEvalPrintLoop
 
+showTitleScreen
+    +printStr .MSG_CBMCRYPT
+    +printStr .MSG_HELP
+    rts
+
+.MSG_CBMCRYPT
+!byte 23
+!pet "   **** CBMCRYPT ****"
+!byte $0d, $0d
+
+.MSG_HELP
+!byte 20
+!pet "   type h for help"
+!byte $0d, $0d
 
 .COMMAND
 !byte 5
