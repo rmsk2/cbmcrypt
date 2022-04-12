@@ -18,8 +18,8 @@ showTitleScreen
 !byte $0d, $0d
 
 .MSG_HELP
-!byte 20
-!pet "   type h for help"
+!byte 21
+!pet "    type h for help"
 !byte $0d, $0d
 
 .COMMAND
@@ -957,8 +957,6 @@ IO_FILE_NUM = 2
 ; file named through INPUT_FILE_NAME using the device number stored at DEVICE_NUM.
 ; --------------------------------------------------
 saveEncryptedFile
-    lda #0
-    sta .WRITE_FILE_NAME
     +strCpy .PREFIX_OVERWRITE, .WRITE_FILE_NAME
     +strCat INPUT_FILE_NAME, .WRITE_FILE_NAME
     +strCat .POSTFIX_SEQ, .WRITE_FILE_NAME
@@ -1030,8 +1028,6 @@ FILE_HEADER_LEN = 16
 ; The file is given through INPUT_FILE_NAME using the device number stored at DEVICE_NUM.
 ; --------------------------------------------------
 loadEncryptedFile
-    lda #0
-    sta .READ_FILE_NAME
     +strCpy INPUT_FILE_NAME, .READ_FILE_NAME
     +strCat .POSTFIX_SEQ_READ, .READ_FILE_NAME
 
@@ -1177,8 +1173,6 @@ infoCommand
     jmp .errNotEmptyInfo
 
 .makeFileName
-    lda #0
-    sta .READ_FILE_NAME
     +strCpy INPUT_FILE_NAME, .READ_FILE_NAME
     +strCat .POSTFIX_SEQ_READ, .READ_FILE_NAME
 
