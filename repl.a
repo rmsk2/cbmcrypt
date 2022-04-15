@@ -105,8 +105,8 @@ showTitleScreen
 !pet "command not recognized"
 
 .ALPHA
-!byte 80
-!pet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:,!-+#=() §$%&@?"
+!byte 81
+!pet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.:,!-+#=() §$%&@?/"
 !pet "abcdefghijklmnopqrstuvwxyz"
 
 
@@ -1312,9 +1312,13 @@ listCommand
     rts
 
 
+; --------------------------------------------------
+; newCommand
+; --------------------------------------------------
 newCommand
     +load16BitImmediate 0, MSG_BUFFER_DATA_COUNT
     +load16BitImmediate MSG_BUFFER_DATA, MSG_BUFFER_INSERT_PTR
+    +memsetLongImmediate 0, MSG_DATA_LEN, MSG_BUFFER_DATA
     rts
 
 MSG_DATA_LEN = 384

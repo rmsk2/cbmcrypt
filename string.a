@@ -784,3 +784,37 @@ memsetCall
     +load16BitImmediate .addrTarget, TEMP_PTR
     jsr memsetCall
 }
+
+.CLR_COUNT
+!byte 0,0
+CLR_LEN
+!byte 0,0
+CLR_VALUE
+!byte 0
+; --------------------------------------------------
+; This subroutine clears an area of memory that can be larger than 256 byte. The start address
+; of the buffer to clear has to be specified in ZERO_PAGE_7, the length has to be written to
+; CLR_LEN and the value that ist to be written has to be stored in CLR_VALUE before calling
+; this routine
+; --------------------------------------------------
+memsetLongCall
+.clrLoop
+    +cmp16BitImmediate MSG_DATA_LEN, .CLR_COUNT
+    beq .clrDone
+    lda CLR_VALUE
+    ldy #0
+    sta (ZERO_PAGE_7), Y
+    +inc16Bit ZERO_PAGE_7
+    +inc16Bit .CLR_COUNT
+    jmp .clrLoop
+.clrDone
+    rts    
+
+
+!macro memsetLongImmediate .val, .len, .addrTarget {
+    +load16BitImmediate .addrTarget, ZERO_PAGE_7
+    +load16BitImmediate .len, CLR_LEN
+    lda #.val
+    sta CLR_VALUE
+    jsr memsetLongCall
+}
