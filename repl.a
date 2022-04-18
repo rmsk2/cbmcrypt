@@ -1317,6 +1317,8 @@ editCommand
 ;     jsr printCRLF
 ;     rts
 
+.LINE_COUNT
+!byte 0,0
 .LIST_COUNT
 !byte 0,0
 .NUM_CHARS_IN_LINE
@@ -1329,6 +1331,7 @@ editCommand
 listCommand
     +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
     +load16BitImmediate 0, .LIST_COUNT
+    +load16BitImmediate 0, .LINE_COUNT
 .lstPrintLoop
     ; Did we print all characters?
     +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
@@ -1348,6 +1351,16 @@ listCommand
     +move16Bit .LINE_END_CALC, .NUM_CHARS_IN_LINE
 .printNextLine
     jsr .printThisLine
+    +inc16Bit .LINE_COUNT
+    +cmp16BitImmediate MAX_OUT_LINES, .LINE_COUNT
+    bne .continueList
+    ; do paging
+    lda #58
+    jsr CHAROUT
+    jsr waitForKey
+    lda #157
+    jsr CHAROUT
+.continueList
     jmp .lstPrintLoop
 .listDone
     rts
