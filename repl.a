@@ -1297,26 +1297,6 @@ editCommand
     rts
 
 
-
-; --------------------------------------------------
-; listCommand
-; --------------------------------------------------
-; listCommand
-;     +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
-;     +load16BitImmediate 0, .LIST_COUNT
-; .listLoop
-;     +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
-;     beq .listDone
-;     ldy #0
-;     lda (ZERO_PAGE_1),Y
-;     jsr CHAROUT
-;     +inc16Bit ZERO_PAGE_1
-;     +inc16Bit .LIST_COUNT
-;     jmp .listLoop
-; .listDone
-;     jsr printCRLF
-;     rts
-
 .LINE_COUNT
 !byte 0,0
 .LIST_COUNT
@@ -1335,9 +1315,11 @@ listCommand
 .lstPrintLoop
     ; Did we print all characters?
     +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
-    beq .listDone
+    bne .listNotDone
+    jmp .listDone
 
-    ; default is a full line
+.listNotDone
+    ; default number of characters to print is a full line
     +move16Bit OUT_LINE_LEN, .NUM_CHARS_IN_LINE
 
     ; check whether a full line is left in the buffer
@@ -1345,21 +1327,22 @@ listCommand
     +sub16Bit .LIST_COUNT, .LINE_END_CALC
     +cmp16Bit OUT_LINE_LEN, .LINE_END_CALC
     bcs .noFullLineLeft                                                            
-    jsr .searchRightMostBlank
+    jsr .searchRightMostBlank                        ; A full line is available => search for a suitable line break position
     jmp .printNextLine
 .noFullLineLeft
-    +move16Bit .LINE_END_CALC, .NUM_CHARS_IN_LINE
+    +move16Bit .LINE_END_CALC, .NUM_CHARS_IN_LINE    ; if less than a line is left, then the remaining characters fit on one line
 .printNextLine
     jsr .printThisLine
+    ; do paging
     +inc16Bit .LINE_COUNT
     +cmp16BitImmediate MAX_OUT_LINES, .LINE_COUNT
     bne .continueList
-    ; do paging
-    lda #58
+    lda #58                                          ; print a colon
     jsr CHAROUT
     jsr waitForKey
-    lda #157
+    lda #157                                         ; print CRSR LEFT
     jsr CHAROUT
+    +load16BitImmediate 0, .LINE_COUNT               ; reset line count
 .continueList
     jmp .lstPrintLoop
 .listDone
@@ -1392,9 +1375,9 @@ listCommand
 
 ; --------------------------------------------------
 ; .searchRightMostBlank searches in the bytes stored at memory location ZERO_PAGE_1
-; for the righmost blank starting with the position given in .NUM_CHARS_IN_LINE. If no blank
-; is found .NUM_CHARS_IN_LINE is unchanged. If a blank is found .NUM_CHARS_IN_LINE is set to the
-; position of the found blank character
+; for the righmost blank considering a total of .NUM_CHARS_IN_LINE bytes. If no blank
+; is found .NUM_CHARS_IN_LINE is unchanged. If a blank is found .NUM_CHARS_IN_LINE is
+; set to the number of bytes (including the blank) that should be printed.
 ; --------------------------------------------------
 .searchRightMostBlank
     ldy .NUM_CHARS_IN_LINE
@@ -1422,7 +1405,7 @@ newCommand
     +memsetLongImmediate 0, MSG_DATA_LEN, MSG_BUFFER_DATA
     rts
 
-MSG_DATA_LEN = 384
+MSG_DATA_LEN = 768
 
 MSG_BUFFER_INSERT_PTR
 !byte 0,0
