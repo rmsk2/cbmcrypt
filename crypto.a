@@ -662,6 +662,18 @@ constructNonceCall
 }
 
 
+unsetProcCallback
+    +load16BitImmediate .callBackDummy, PROC_CALLBACK
+    rts    
+
+
+.procCallback
+    jmp (PROC_CALLBACK)
+
+
+.callBackDummy
+    rts
+
 KEY_ADDR
 !byte 0,0
 NONCE_ADDR
@@ -672,6 +684,8 @@ NUM_BUFFER_BYTES
 !byte 0,0
 BUFFER_COUNT
 !byte 0,0
+PROC_CALLBACK
+!byte <.callBackDummy,>.callBackDummy
 ; --------------------------------------------------
 ; processBufferCall encrypts/decrypts the buffer stored at .BUFFER_ADDR using
 ; the key (as string) stored at .KEY_ADDR and the nonce stored (as string) 
@@ -694,6 +708,7 @@ processBufferCall
 .nextByte
     +cmp16Bit BUFFER_COUNT, NUM_BUFFER_BYTES
     beq .processingDone
+    jsr .procCallback
     jsr chaChaGetNextByte
     ldy #0
     eor (ZERO_PAGE_7), Y

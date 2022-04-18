@@ -70,7 +70,9 @@ main
     lda #147
     jsr CHAROUT
     jsr newCommand
+    +load16BitImmediate procVisualizer, PROC_CALLBACK
     jsr progStart
+    jsr unsetProcCallback
     lda #142
     jsr CHAROUT
 
