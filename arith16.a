@@ -141,7 +141,9 @@
 
 ; --------------------------------------------------
 ; cmp16Bit compares the 16 bit values stored at memAddr1 and memAddr2 
-; Z  flag is set in case these values are equal
+; Z  flag is set in case these values are equal. Carry is set
+; if the value stored at .memAddr1 is greater or equal than the value stored
+; at .memAddr
 ; --------------------------------------------------
 !macro cmp16Bit .memAddr1, .memAddr2 {
     lda .memAddr1+1

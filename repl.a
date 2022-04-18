@@ -258,6 +258,8 @@ clrCommand
 vdcCommand
     lda #EDIT_LINE_LENGTH_80_COLUMN
     sta EDIT_LINE_LEN
+    lda #OUT_LINE_LENGTH_80_COLUMN
+    sta OUT_LINE_LEN
     rts
 
 
@@ -267,6 +269,8 @@ vdcCommand
 vicCommand
     lda #EDIT_LINE_LENGTH
     sta EDIT_LINE_LEN
+    lda #OUT_LINE_LENGTH
+    sta OUT_LINE_LEN
     rts
 }
 
@@ -1224,6 +1228,9 @@ infoCommand
 EDIT_LINE_LEN
 !byte EDIT_LINE_LENGTH, 0
 
+OUT_LINE_LEN
+!byte OUT_LINE_LENGTH, 0
+
 .EDIT_INPUT_BUFFER
 !byte 0
 !skip 78
@@ -1290,7 +1297,31 @@ editCommand
     rts
 
 
+
+; --------------------------------------------------
+; listCommand
+; --------------------------------------------------
+; listCommand
+;     +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
+;     +load16BitImmediate 0, .LIST_COUNT
+; .listLoop
+;     +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
+;     beq .listDone
+;     ldy #0
+;     lda (ZERO_PAGE_1),Y
+;     jsr CHAROUT
+;     +inc16Bit ZERO_PAGE_1
+;     +inc16Bit .LIST_COUNT
+;     jmp .listLoop
+; .listDone
+;     jsr printCRLF
+;     rts
+
 .LIST_COUNT
+!byte 0,0
+.NUM_CHARS_IN_LINE
+!byte 0,0
+.LINE_END_CALC
 !byte 0,0
 ; --------------------------------------------------
 ; listCommand
@@ -1298,19 +1329,76 @@ editCommand
 listCommand
     +load16BitImmediate MSG_BUFFER_DATA, ZERO_PAGE_1
     +load16BitImmediate 0, .LIST_COUNT
-.listLoop
+.lstPrintLoop
+    ; Did we print all characters?
     +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
-    beq .listDone
-    ldy #0
-    lda (ZERO_PAGE_1),Y
-    jsr CHAROUT
-    +inc16Bit ZERO_PAGE_1
-    +inc16Bit .LIST_COUNT
-    jmp .listLoop
+    bcs .listDone ; ************** ToDo: This masks an off by one error
+
+    ; default is a full line
+    +move16Bit OUT_LINE_LEN, .NUM_CHARS_IN_LINE
+
+    ; check whether a full line is left in the buffer
+    +move16Bit MSG_BUFFER_DATA_COUNT, .LINE_END_CALC
+    +sub16Bit .LIST_COUNT, .LINE_END_CALC
+    +cmp16Bit OUT_LINE_LEN, .LINE_END_CALC
+    bcs .noFullLineLeft                                                            
+    jsr .searchRightMostBlank
+    jmp .printNextLine
+.noFullLineLeft
+    +move16Bit .LINE_END_CALC, .NUM_CHARS_IN_LINE
+.printNextLine
+    jsr .printThisLine
+    jmp .lstPrintLoop
 .listDone
-    jsr printCRLF
     rts
 
+
+; --------------------------------------------------
+; printThisLine prints the number of characters given in .NUM_CHARS_IN_LINE that are
+; stored at the memory position to which ZERO_PAGE_1 points. At the end the 
+; pointer in ZERO_PAGE_1 is moved to the start pos of the next line. With each
+; printed character the contents of .LIST_COUNT is also incremented
+; --------------------------------------------------
+.printThisLine
+    ldy #0
+.nextChar
+    lda (ZERO_PAGE_1),y
+    jsr CHAROUT
+    +inc16Bit .LIST_COUNT
+    iny
+    cpy .NUM_CHARS_IN_LINE
+    bne .nextChar
+    +add16Bit .NUM_CHARS_IN_LINE, ZERO_PAGE_1
+    lda .NUM_CHARS_IN_LINE
+    cmp OUT_LINE_LEN
+    beq .fullLineNoCRLF
+    jsr printCRLF
+.fullLineNoCRLF
+    rts
+
+
+; --------------------------------------------------
+; .searchRightMostBlank searches in the bytes stored at memory location ZERO_PAGE_1
+; for the righmost blank starting with the position given in .NUM_CHARS_IN_LINE. If no blank
+; is found .NUM_CHARS_IN_LINE is unchanged. If a blank is found .NUM_CHARS_IN_LINE is set to the
+; position of the found blank character
+; --------------------------------------------------
+.searchRightMostBlank
+    ldy .NUM_CHARS_IN_LINE
+    dey
+.checkNextChar
+    lda (ZERO_PAGE_1), y
+    cmp #32
+    beq .blankFound
+    dey
+    bpl .checkNextChar
+    jmp .noBlankFound
+.blankFound
+    iny
+    sty .NUM_CHARS_IN_LINE
+
+.noBlankFound
+    rts
 
 ; --------------------------------------------------
 ; newCommand
