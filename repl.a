@@ -1332,7 +1332,7 @@ listCommand
 .lstPrintLoop
     ; Did we print all characters?
     +cmp16Bit .LIST_COUNT, MSG_BUFFER_DATA_COUNT
-    bcs .listDone ; ************** ToDo: This masks an off by one error
+    beq .listDone
 
     ; default is a full line
     +move16Bit OUT_LINE_LEN, .NUM_CHARS_IN_LINE
