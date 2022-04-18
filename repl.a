@@ -1328,7 +1328,7 @@ listCommand
     +cmp16Bit OUT_LINE_LEN, .LINE_END_CALC
     bcs .noFullLineLeft                                                            
     jsr .searchRightMostBlank                        ; A full line is available => search for a suitable line break position
-    jmp .printNextLine
+    jmp .printNextLine                               ; now print the (potentially shortened) line
 .noFullLineLeft
     +move16Bit .LINE_END_CALC, .NUM_CHARS_IN_LINE    ; if less than a line is left, then the remaining characters fit on one line
 .printNextLine
