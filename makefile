@@ -29,6 +29,12 @@ endif
 
 PLATFORM_FILES = platform.a c64.a vic20.a plus4.a c128.a
 
+cleanup:
+	rm cbmcrypt_c64.d64
+	rm cbmcrypt_vic20.d64
+	rm cbmcrypt_plus4.d64
+	rm cbmcrypt_c128.d64
+
 clean:
 	rm cbmcrypt
 	rm cbmcrypt.d64

@@ -1,7 +1,4 @@
-rm cbmcrypt_c64.d64
-rm cbmcrypt_vic20.d64
-rm cbmcrypt_plus4.d64
-rm cbmcrypt_c128.d64
+make cleanup
 
 make clean
 make 
