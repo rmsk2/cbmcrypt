@@ -210,36 +210,43 @@ processCommand
 
 !ifdef IS_TEST {
 
-.TST_BUFFER
-!byte 3
-!pet "319"
-
-.RES_BUFFER
-!byte 2
-.RES_DATA
-!byte 0,0
-
-.TEST_STR
-!byte 5
-!pet "test"
-!byte $0d
+.COL_COUNT
+!byte 0
+.ROW_COUNT
+!byte 0
+.CHAR_COUNT
+!byte 0
 testCommand
-    ;jsr chachaTest
-    ;jsr hexConvTest
-    ;jsr chaChaDeriveTest
-    ;jsr chaChaNonceTest
-    ;jsr toStringTest
-    lda #3
-    sta .TST_BUFFER
-    +inputStr .TST_BUFFER, DECIMAL_CHARS
+    lda #0
+    sta .COL_COUNT
+    sta .ROW_COUNT
+    sta .CHAR_COUNT
+.nextCol
+    lda .COL_COUNT
+    cmp #4
+    beq .nextRow
+    ldx .CHAR_COUNT
+    lda PET_KEY_CHARS+1,x
+    jsr CHAROUT
+    lda #58
+    jsr CHAROUT
+    lda PET_KEY_CHARS+1,x
+    jsr printByte
+    lda #32
+    jsr CHAROUT 
+    inc .CHAR_COUNT
+    inc .COL_COUNT
+    jmp .nextCol
+.nextRow
+    lda .CHAR_COUNT
+    cmp #64
+    beq .donePrintPetscii
     jsr printCRLF
-    +atoi .TST_BUFFER, .RES_DATA
-    bne .errNotConvertTst
-    +printByteVector .RES_BUFFER
+    lda #0
+    sta .COL_COUNT
+    jmp .nextCol
+.donePrintPetscii
     jsr printCRLF
-    rts
-.errNotConvertTst
-    +printStr .ERR_NO_CONVERT
     rts
 }
 
