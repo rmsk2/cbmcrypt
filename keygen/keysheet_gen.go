@@ -252,9 +252,16 @@ func (k *KeySheetCollection) AddCopy(s *KeySheet) {
 }
 
 func (k *KeySheetCollection) Generate() error {
+	// Initialize each copy
+	var count uint16
+
+	for count = 0; count < k.NumberOfCopies; count++ {
+		k.AddCopy(NewKeySheet(k.Title, count))
+	}
+
+	// generate key Ids for all days for which the sheet is valid
 	keyIDs := map[uint16]bool{}
 
-	// generate key Ids
 	for len(keyIDs) != int(k.NumberOfDays) {
 		temp := []byte{0, 0}
 		_, err := rand.Read(temp)
@@ -263,13 +270,6 @@ func (k *KeySheetCollection) Generate() error {
 		}
 
 		keyIDs[uint16(temp[0])+256*uint16(temp[1])] = true
-	}
-
-	var i uint16
-
-	// Initialize each copy
-	for i = 0; i < k.NumberOfCopies; i++ {
-		k.AddCopy(NewKeySheet(k.Title, i))
 	}
 
 	// Add an entry for each key id to each copy
@@ -307,7 +307,7 @@ func (k *KeySheetCollection) Generate() error {
 			noncePrefixes[uint16(temp[0])+256*uint16(temp[1])] = true
 		}
 
-		// Add an entry for the current day to each copy
+		// Add an entry for the current day to each copy using one of the nonce prefixes
 		var copyId uint16 = 0
 		for j := range noncePrefixes {
 			noncePrefixAsBytes := []byte{0, 0}
