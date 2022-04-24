@@ -334,6 +334,7 @@ func (k *KeySheetCollection) RenderAll(renderer RenderFunc) error {
 }
 
 func (k *KeySheetCollection) DiagnosticRenderer(sheet *KeySheet) error {
+	fmt.Println(sheet.Title)
 	fmt.Printf("Copy Nr.: %d\n", sheet.CopyId+1)
 	for _, j := range sheet.Entries {
 		fmt.Print(k.petscii.PetsciiSliceToString(j.KeySeed))
