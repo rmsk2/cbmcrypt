@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"flag"
 	"fmt"
 
 	"crypto/rand"
@@ -297,7 +298,35 @@ func (k *KeySheetCollection) DiagnosticRenderer(sheet *KeySheet) error {
 }
 
 func main() {
-	keySheets := NewKeySheetCollection("Schlüsselkreis Test", 2, 4)
+	titlePtr := flag.String("title", "Default", "Title of the key sheet")
+	numCopiesPtr := flag.Uint("copies", 2, "Number of copies, i.e. number of participants")
+	numDaysPtr := flag.Uint("num-keys", 31, "Number of keys on sheet")
+	keyLenPtr := flag.Uint("key-len", uint(SeedLength), "Number of characters in key")
+
+	flag.Parse()
+
+	if *numCopiesPtr < 1 {
+		fmt.Println("There has to be at least one copiy")
+		return
+	}
+
+	if *numDaysPtr < 1 {
+		fmt.Println("There has to be at least one key on the sheet")
+		return
+	}
+
+	if *keyLenPtr < 15 {
+		fmt.Println("There have to be at least 15 characters in a key")
+		return
+	}
+
+	if *keyLenPtr > 32 {
+		fmt.Println("There must not be more than 32 characters in a key")
+		return
+	}
+
+	keySheets := NewKeySheetCollection(*titlePtr, uint16(*numCopiesPtr), uint16(*numDaysPtr))
+	keySheets.SeedLen = uint16(*keyLenPtr)
 	err := keySheets.Generate()
 	if err != nil {
 		fmt.Println(err)
