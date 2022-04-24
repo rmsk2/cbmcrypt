@@ -306,7 +306,7 @@ func main() {
 	flag.Parse()
 
 	if *numCopiesPtr < 1 {
-		fmt.Println("There has to be at least one copiy")
+		fmt.Println("There has to be at least one copy")
 		return
 	}
 
