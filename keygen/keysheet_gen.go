@@ -219,7 +219,7 @@ func (k *KeySheetCollection) Generate() error {
 	// Add an entry for each key id to each copy
 	for v := range keyIDs {
 		// generate key for the day
-		seedRaw := make([]byte, SeedLength)
+		seedRaw := make([]byte, k.SeedLen)
 		_, err := rand.Read(seedRaw)
 		if err != nil {
 			return fmt.Errorf("unable to generate key seed: %v", err)
