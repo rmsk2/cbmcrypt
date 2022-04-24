@@ -330,8 +330,7 @@ func main() {
 	keySheets := NewKeySheetCollection(*titlePtr, uint16(*numCopiesPtr), uint16(*numDaysPtr))
 	keySheets.SeedLen = uint16(*keyLenPtr)
 
-	rendererMap := map[string]RenderFunc{}
-	rendererMap[defaultRendererName] = keySheets.DiagnosticRenderer
+	rendererMap := map[string]RenderFunc{defaultRendererName: keySheets.DiagnosticRenderer}
 
 	renderFunc, ok := rendererMap[*rendererPtr]
 	if !ok {
