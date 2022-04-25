@@ -87,7 +87,7 @@ func (k *KeySheetCollection) AddCopy(s *KeySheet) {
 	k.Copies = append(k.Copies, s)
 }
 
-// Generate generate all vlaues on all copies of the key sheet
+// Generate generates all values on all copies of the key sheet
 func (k *KeySheetCollection) Generate() error {
 	// Initialize each copy
 	var count uint16
