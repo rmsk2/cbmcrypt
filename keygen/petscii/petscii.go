@@ -37,14 +37,14 @@ func IndexToPetscii(val byte) byte {
 	return petsciiTable[val]
 }
 
-func PetsciiToChar(val byte) byte {
+func ToChar(val byte) byte {
 	return convTable[val]
 }
 
-func PetsciiSliceToString(data []byte) string {
+func SliceToString(data []byte) string {
 	res := []byte{}
 	for _, j := range data {
-		res = append(res, PetsciiToChar(j))
+		res = append(res, ToChar(j))
 	}
 
 	return string(res)

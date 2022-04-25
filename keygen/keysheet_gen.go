@@ -162,7 +162,7 @@ func (k *KeySheetCollection) DiagnosticRenderer(sheet *KeySheet) error {
 	fmt.Println(sheet.Title)
 	fmt.Printf("Copy Nr.: %d\n", sheet.CopyId+1)
 	for _, j := range sheet.Entries {
-		fmt.Print(petscii.PetsciiSliceToString(j.KeySeed))
+		fmt.Print(petscii.SliceToString(j.KeySeed))
 		fmt.Print(" ")
 		fmt.Print(hex.EncodeToString(j.KeyID))
 		fmt.Print(" ")
