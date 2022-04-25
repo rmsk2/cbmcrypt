@@ -11,7 +11,7 @@ type CBMDeriver struct {
 	deriveConst []byte
 }
 
-// NewCBMDeriver createa and initializes a new CBMDeriver struct
+// NewCBMDeriver creates and initializes a new CBMDeriver struct
 func NewCBMDeriver(drvConst []byte) *CBMDeriver {
 	res := new(CBMDeriver)
 	if drvConst == nil {
