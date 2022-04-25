@@ -11,17 +11,22 @@ import (
 	"crypto/rand"
 )
 
+// SeedLength holds the default seed length in characters
 var SeedLength uint16 = 16
 
+// RenderFunc is a type that abstracts a thing that knows how to render a key sheet
 type RenderFunc func(k *KeySheet) error
 
+// KeySheetEntry represents an entry in a key sheet that describes the key for a specific day on a
+// specific copy
 type KeySheetEntry struct {
-	KeySeed     []byte
-	KeyID       []byte
-	NoncePrefix []byte
-	CheckValue  []byte
+	KeySeed     []byte // KeySeed holds the key value if the entry
+	KeyID       []byte // KeyID holds an identifier of the key which can be used when decrypting a message
+	NoncePrefix []byte // NoncePrefix holds a prefix for the nonce that is specific for the copy and the day
+	CheckValue  []byte // CheckValue can be used to check whether the user has entered all key data correctly
 }
 
+// NewKeySheetEntry creates and initializes a new key sheet entry
 func NewKeySheetEntry(seed []byte, keyID []byte, noncePrefix []byte, checkValue []byte) *KeySheetEntry {
 	res := new(KeySheetEntry)
 	res.KeySeed = seed
@@ -32,12 +37,14 @@ func NewKeySheetEntry(seed []byte, keyID []byte, noncePrefix []byte, checkValue 
 	return res
 }
 
+// KeySheet holds all entries of a key sheet
 type KeySheet struct {
-	Title   string
-	CopyId  uint16
-	Entries []*KeySheetEntry
+	Title   string           // Title holds the title of the key sheet
+	CopyId  uint16           // CopyId is the unique identifier of this key sheet copy
+	Entries []*KeySheetEntry // Entries holds the Entries of the key sheet
 }
 
+// NewKeySheet creates and initializes a new key sheet
 func NewKeySheet(title string, copyId uint16) *KeySheet {
 	res := new(KeySheet)
 	res.Title = title
@@ -47,19 +54,22 @@ func NewKeySheet(title string, copyId uint16) *KeySheet {
 	return res
 }
 
+// AddEntry appends an entry to a key sheet
 func (k *KeySheet) AddEntry(e *KeySheetEntry) {
 	k.Entries = append(k.Entries, e)
 }
 
+// KeySheetCollection binds together all copies of the key sheet
 type KeySheetCollection struct {
-	Title          string
-	NumberOfCopies uint16
-	NumberOfDays   uint16
-	SeedLen        uint16
-	Copies         []*KeySheet
+	Title          string      // Title holds the title of the key sheet
+	NumberOfCopies uint16      // NumberOfCopies stores the number of copies of the key sheet
+	NumberOfDays   uint16      // NumberOfDays stores the number of keys which are to appear on each copy
+	SeedLen        uint16      // SeedLen holds the number of characters in the key
+	Copies         []*KeySheet // Copies points to the collection of copies of the key sheet
 	deriver        *cbmcrypt.CBMDeriver
 }
 
+// NewKeySheetCollection creates and initializes a key sheet collection
 func NewKeySheetCollection(title string, numOfCopies uint16, numOfDays uint16) *KeySheetCollection {
 	res := new(KeySheetCollection)
 	res.Title = title
@@ -72,10 +82,12 @@ func NewKeySheetCollection(title string, numOfCopies uint16, numOfDays uint16) *
 	return res
 }
 
+// AddCopy appends a new copy to the key sheet collection
 func (k *KeySheetCollection) AddCopy(s *KeySheet) {
 	k.Copies = append(k.Copies, s)
 }
 
+// Generate generate all vlaues on all copies of the key sheet
 func (k *KeySheetCollection) Generate() error {
 	// Initialize each copy
 	var count uint16
@@ -148,6 +160,7 @@ func (k *KeySheetCollection) Generate() error {
 	return nil
 }
 
+// RenderAll renders all copies of the key sheet using the specified renderer
 func (k *KeySheetCollection) RenderAll(renderer RenderFunc) error {
 	for _, j := range k.Copies {
 		err := renderer(j)
@@ -158,6 +171,8 @@ func (k *KeySheetCollection) RenderAll(renderer RenderFunc) error {
 	return nil
 }
 
+// DiagnosticRenderer is a primitive renderer that only shows the values but does no formatting. It can
+// be used to test the key generation function.
 func (k *KeySheetCollection) DiagnosticRenderer(sheet *KeySheet) error {
 	fmt.Println(sheet.Title)
 	fmt.Printf("Copy Nr.: %d\n", sheet.CopyId+1)

@@ -6,10 +6,12 @@ import (
 	"golang.org/x/crypto/chacha20"
 )
 
+// CBMDeriver binds the data together that is needed to perform a CBMCrypt key derivation
 type CBMDeriver struct {
 	deriveConst []byte
 }
 
+// NewCBMDeriver createa and initializes a new CBMDeriver struct
 func NewCBMDeriver(drvConst []byte) *CBMDeriver {
 	res := new(CBMDeriver)
 	if drvConst == nil {
