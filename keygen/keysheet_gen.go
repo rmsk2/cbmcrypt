@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"keygen/petscii"
 
 	"crypto/rand"
 
@@ -14,61 +15,6 @@ import (
 var SeedLength uint16 = 16
 
 type RenderFunc func(k *KeySheet) error
-
-type PetsciiHelper struct {
-	petsciiTable [64]byte
-	convTable    map[byte]byte
-}
-
-func NewPetsciiHelper() *PetsciiHelper {
-	res := new(PetsciiHelper)
-	res.petsciiTable = [64]byte{
-		// '0'-'9'
-		0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-		// 'a'-''z
-		0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a,
-		0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54,
-		0x55, 0x56, 0x57, 0x58, 0x59, 0x5a,
-		// 'A'-'Z'
-		0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca,
-		0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4,
-		0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda,
-		// '+','/'
-		0x2b, 0x2f,
-	}
-
-	res.convTable = map[byte]byte{
-		0x30: '0', 0x31: '1', 0x32: '2', 0x33: '3', 0x34: '4', 0x35: '5', 0x36: '6', 0x37: '7', 0x38: '8', 0x39: '9',
-		0x41: 'a', 0x42: 'b', 0x43: 'c', 0x44: 'd', 0x45: 'e', 0x46: 'f', 0x47: 'g', 0x48: 'h', 0x49: 'i', 0x4a: 'j',
-		0x4b: 'k', 0x4c: 'l', 0x4d: 'm', 0x4e: 'n', 0x4f: 'o', 0x50: 'p', 0x51: 'q', 0x52: 'r', 0x53: 's', 0x54: 't',
-		0x55: 'u', 0x56: 'v', 0x57: 'w', 0x58: 'x', 0x59: 'y', 0x5a: 'z',
-		0xc1: 'A', 0xc2: 'B', 0xc3: 'C', 0xc4: 'D', 0xc5: 'E', 0xc6: 'F', 0xc7: 'G', 0xc8: 'H', 0xc9: 'I', 0xca: 'J',
-		0xcb: 'K', 0xcc: 'L', 0xcd: 'M', 0xce: 'N', 0xcf: 'O', 0xd0: 'P', 0xd1: 'Q', 0xd2: 'R', 0xd3: 'S', 0xd4: 'T',
-		0xd5: 'U', 0xd6: 'V', 0xd7: 'W', 0xd8: 'X', 0xd9: 'Y', 0xda: 'Z',
-		0x2b: '+', 0x2f: '/',
-	}
-
-	return res
-}
-
-func (p *PetsciiHelper) IndexToPetscii(val byte) byte {
-	val = val & 0x3F
-
-	return p.petsciiTable[val]
-}
-
-func (p *PetsciiHelper) PetsciiToChar(val byte) byte {
-	return p.convTable[val]
-}
-
-func (p *PetsciiHelper) PetsciiSliceToString(data []byte) string {
-	res := []byte{}
-	for _, j := range data {
-		res = append(res, p.PetsciiToChar(j))
-	}
-
-	return string(res)
-}
 
 type CBMDeriver struct {
 	deriveConst []byte
@@ -176,7 +122,6 @@ type KeySheetCollection struct {
 	SeedLen        uint16
 	Copies         []*KeySheet
 	deriver        *CBMDeriver
-	petscii        *PetsciiHelper
 }
 
 func NewKeySheetCollection(title string, numOfCopies uint16, numOfDays uint16) *KeySheetCollection {
@@ -187,7 +132,6 @@ func NewKeySheetCollection(title string, numOfCopies uint16, numOfDays uint16) *
 	res.Copies = []*KeySheet{}
 	res.SeedLen = SeedLength
 	res.deriver = NewCBMDeriver(nil)
-	res.petscii = NewPetsciiHelper()
 
 	return res
 }
@@ -228,7 +172,7 @@ func (k *KeySheetCollection) Generate() error {
 
 		// turn it into PETSCII
 		for i := range seedRaw {
-			seedRaw[i] = k.petscii.IndexToPetscii(seedRaw[i])
+			seedRaw[i] = petscii.IndexToPetscii(seedRaw[i])
 		}
 
 		// Perform key derivation
@@ -282,7 +226,7 @@ func (k *KeySheetCollection) DiagnosticRenderer(sheet *KeySheet) error {
 	fmt.Println(sheet.Title)
 	fmt.Printf("Copy Nr.: %d\n", sheet.CopyId+1)
 	for _, j := range sheet.Entries {
-		fmt.Print(k.petscii.PetsciiSliceToString(j.KeySeed))
+		fmt.Print(petscii.PetsciiSliceToString(j.KeySeed))
 		fmt.Print(" ")
 		fmt.Print(hex.EncodeToString(j.KeyID))
 		fmt.Print(" ")

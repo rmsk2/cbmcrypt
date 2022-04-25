@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"keygen/petscii"
 	"testing"
 )
 
@@ -9,7 +10,6 @@ func TestDerivation(t *testing.T) {
 	keyId := []byte{0x11, 0x22}
 	noncePrefix := []byte{0x00, 0x01}
 	seedRaw := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 11, 12, 13, 14, 15}
-	petscii := NewPetsciiHelper()
 	deriver := NewCBMDeriver(nil)
 
 	seed := []byte{}
