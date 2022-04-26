@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"keygen/render"
 	"keygen/sheet"
 )
 
@@ -41,6 +42,7 @@ func main() {
 
 	rendererMap := map[string]sheet.RenderFunc{
 		defaultRendererName: keySheets.DiagnosticRenderer,
+		"txt":               render.NewTextRenderer().Render,
 	}
 
 	renderFunc, ok := rendererMap[*rendererPtr]
