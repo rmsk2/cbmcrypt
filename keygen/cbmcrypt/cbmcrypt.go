@@ -1,3 +1,4 @@
+// Package cbmcrypt implements the key derivation algorithm used by CBMCrypt
 package cbmcrypt
 
 import (
@@ -23,10 +24,12 @@ func NewCBMDeriver(drvConst []byte) *CBMDeriver {
 	return res
 }
 
-func (c *CBMDeriver) DeriveCBMCryptKey(keyData []byte, keyId []byte) (derivedKey []byte, checkValue []byte, err error) {
+// DeriveCBMCryptKey performs a key derivation using the specified key seed and also returns a check value that depends
+// on the key seed and the key ID.
+func (c *CBMDeriver) DeriveCBMCryptKey(keyData []byte, keyID []byte) (derivedKey []byte, checkValue []byte, err error) {
 	derivationNonce := make([]byte, len(c.deriveConst))
 	copy(derivationNonce, c.deriveConst)
-	derivationNonce = append(derivationNonce, keyId...)
+	derivationNonce = append(derivationNonce, keyID...)
 	for len(derivationNonce) < 12 {
 		derivationNonce = append(derivationNonce, 0)
 	}
@@ -62,6 +65,9 @@ func (c *CBMDeriver) DeriveCBMCryptKey(keyData []byte, keyId []byte) (derivedKey
 	return derivedKey, checkValue, nil
 }
 
+// CustomizeCheckValue modfies the check value returned by DeriveCBMCryptKey in such a way that it is also
+// dependent of the nonce prefix. Therefore all necessary components influence the check value that has to
+// be entered by the user.
 func (c *CBMDeriver) CustomizeCheckValue(checkValue []byte, noncePrefix []byte) []byte {
 	res := make([]byte, len(checkValue))
 	copy(res, checkValue)

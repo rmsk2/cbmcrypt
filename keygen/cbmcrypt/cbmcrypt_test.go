@@ -7,7 +7,7 @@ import (
 )
 
 func TestDerivation(t *testing.T) {
-	keyId := []byte{0x11, 0x22}
+	keyID := []byte{0x11, 0x22}
 	noncePrefix := []byte{0x00, 0x01}
 	seedRaw := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 11, 12, 13, 14, 15}
 	deriver := NewCBMDeriver(nil)
@@ -17,7 +17,7 @@ func TestDerivation(t *testing.T) {
 		seed = append(seed, petscii.IndexToPetscii(j))
 	}
 
-	_, checkValue, err := deriver.DeriveCBMCryptKey(seed, keyId)
+	_, checkValue, err := deriver.DeriveCBMCryptKey(seed, keyID)
 	if err != nil {
 		t.Fatal(err)
 	}

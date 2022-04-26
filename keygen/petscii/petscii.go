@@ -1,3 +1,5 @@
+// Package petscii implements some helper routines in conncetion to the character encoding used
+// on Commodore 8 bit computers
 package petscii
 
 var petsciiTable [64]byte
@@ -31,16 +33,19 @@ func init() {
 	}
 }
 
+// IndexToPetscii transforms any byte value into one of the 64 byte values that represent the PETSCII-characters a-zA-Z0-9+/
 func IndexToPetscii(val byte) byte {
 	val = val & 0x3F
 
 	return petsciiTable[val]
 }
 
+// ToChar transforms any given PETSCII-Code for any of the charactera a-zA-Z0-9+/ to the corresponding ASCII/UTF-8 encoded char
 func ToChar(val byte) byte {
 	return convTable[val]
 }
 
+// SliceToString performs ToChar for all values of the specified slice and returns a correspoding string
 func SliceToString(data []byte) string {
 	res := []byte{}
 	for _, j := range data {

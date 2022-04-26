@@ -1,3 +1,4 @@
+// Package sheet implements generating key sheets for CBMCrypt
 package sheet
 
 import (
@@ -35,18 +36,18 @@ func NewKeySheetEntry(seed []byte, keyID []byte, noncePrefix []byte, checkValue 
 	return res
 }
 
-// KeySheet holds all entries of a key sheet
+// KeySheet holds all components of a key sheet
 type KeySheet struct {
 	Title   string           // Title holds the title of the key sheet
-	CopyId  uint16           // CopyId is the unique identifier of this key sheet copy
+	CopyID  uint16           // CopyID is the unique identifier of this key sheet copy
 	Entries []*KeySheetEntry // Entries holds the Entries of the key sheet
 }
 
 // NewKeySheet creates and initializes a new key sheet
-func NewKeySheet(title string, copyId uint16) *KeySheet {
+func NewKeySheet(title string, copyID uint16) *KeySheet {
 	res := new(KeySheet)
 	res.Title = title
-	res.CopyId = copyId
+	res.CopyID = copyID
 	res.Entries = []*KeySheetEntry{}
 
 	return res
@@ -57,7 +58,7 @@ func (k *KeySheet) AddEntry(e *KeySheetEntry) {
 	k.Entries = append(k.Entries, e)
 }
 
-// KeySheetCollection binds together all copies of the key sheet
+// KeySheetCollection binds together all copies of a key sheet
 type KeySheetCollection struct {
 	Title          string      // Title holds the title of the key sheet
 	NumberOfCopies uint16      // NumberOfCopies stores the number of copies of the key sheet
@@ -143,15 +144,15 @@ func (k *KeySheetCollection) Generate() error {
 		}
 
 		// Add an entry for the current day to each copy using one of the nonce prefixes
-		var copyId uint16 = 0
+		var copyID uint16 = 0
 		for j := range noncePrefixes {
 			noncePrefixAsBytes := []byte{0, 0}
 			binary.LittleEndian.PutUint16(noncePrefixAsBytes, j)
 			customCheckValue := k.deriver.CustomizeCheckValue(checkValue, noncePrefixAsBytes)
 			newSheetEntry := NewKeySheetEntry(seedRaw, keyIDAsBytes, noncePrefixAsBytes, customCheckValue)
-			k.Copies[copyId].AddEntry(newSheetEntry)
+			k.Copies[copyID].AddEntry(newSheetEntry)
 
-			copyId++
+			copyID++
 		}
 	}
 
@@ -163,7 +164,7 @@ func (k *KeySheetCollection) RenderAll(renderer RenderFunc) error {
 	for _, j := range k.Copies {
 		err := renderer(j)
 		if err != nil {
-			return fmt.Errorf("unable to render copy %d: %v", j.CopyId, err)
+			return fmt.Errorf("unable to render copy %d: %v", j.CopyID, err)
 		}
 	}
 	return nil
@@ -173,7 +174,7 @@ func (k *KeySheetCollection) RenderAll(renderer RenderFunc) error {
 // be used to test the key generation function.
 func (k *KeySheetCollection) DiagnosticRenderer(sheet *KeySheet) error {
 	fmt.Println(sheet.Title)
-	fmt.Printf("Copy Nr.: %d\n", sheet.CopyId+1)
+	fmt.Printf("Copy Nr.: %d\n", sheet.CopyID+1)
 	for _, j := range sheet.Entries {
 		fmt.Print(petscii.SliceToString(j.KeySeed))
 		fmt.Print(" ")
