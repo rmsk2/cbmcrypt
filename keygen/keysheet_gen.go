@@ -41,8 +41,8 @@ func main() {
 	keySheets.SeedLen = uint16(*keyLenPtr)
 
 	rendererMap := map[string]sheet.RenderFunc{
-		defaultRendererName: keySheets.DiagnosticRenderer,
-		"txt":               render.NewTextRenderer().Render,
+		defaultRendererName:     keySheets.DiagnosticRenderer,
+		render.TextRendererName: render.NewTextRenderer().Render,
 	}
 
 	renderFunc, ok := rendererMap[*rendererPtr]
