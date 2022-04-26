@@ -40,7 +40,7 @@ func IndexToPetscii(val byte) byte {
 	return petsciiTable[val]
 }
 
-// ToChar transforms any given PETSCII-Code for any of the charactera a-zA-Z0-9+/ to the corresponding ASCII/UTF-8 encoded char
+// ToChar transforms any given PETSCII-Code for any of the characters a-zA-Z0-9+/ to the corresponding ASCII/UTF-8 encoded char
 func ToChar(val byte) byte {
 	return convTable[val]
 }
