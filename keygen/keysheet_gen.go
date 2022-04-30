@@ -42,7 +42,8 @@ func main() {
 
 	rendererMap := map[string]sheet.RenderFunc{
 		defaultRendererName:     keySheets.DiagnosticRenderer,
-		render.TextRendererName: render.NewTextRenderer().Render,
+		render.TextRendererName: render.NewTextRenderer().RenderStdOut,
+		"file":                  render.NewTextRenderer().RenderFile,
 	}
 
 	renderFunc, ok := rendererMap[*rendererPtr]

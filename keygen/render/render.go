@@ -68,7 +68,19 @@ func (t *TextRenderer) RenderToWriter(w io.Writer, sheet *sheet.KeySheet) error 
 	return nil
 }
 
-// Render renders a key sheet as a formatted text file
-func (t *TextRenderer) Render(sheet *sheet.KeySheet) error {
+// RenderStdOut renders a key sheet and writes it to stdout
+func (t *TextRenderer) RenderStdOut(sheet *sheet.KeySheet) error {
 	return t.RenderToWriter(os.Stdout, sheet)
+}
+
+// RenderFile renders a key sheet as a formatted text file
+func (t *TextRenderer) RenderFile(sheet *sheet.KeySheet) error {
+	fileName := fmt.Sprintf("copy_nr_%d.txt", sheet.CopyID)
+	f, err := os.Create(fileName)
+	if err != nil {
+		return fmt.Errorf("unable to render sheet: %v", err)
+	}
+	defer func() { f.Close() }()
+
+	return t.RenderToWriter(f, sheet)
 }
