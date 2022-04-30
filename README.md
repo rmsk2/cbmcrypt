@@ -40,6 +40,15 @@ understood by CBMCrypt:
 |`dir`| Prints a directory listing of the selected floppy drive (8 is the default)|
 |`enc`| Encrypts the current contents of the message buffer and stores the ciphertext on floppy. This command only works after the `ini` comand was called successfully |
 |`dec`| Decrypts a file read from the floppy and stores the plaintext in the message buffer. This command only works after the `ini` comand was called successfully |
+|`dev`| Can be used to select the device number (8-11) of the floppy drive to use for IO |
+|`ste`| Prints the current state of CBMCrypt. In detail is prints the floppy device number and if CBMCrypt has been properly initialized through the `ini` command. If this is the case the key ID of the key used during initialization is also printed |
+|`ini`| This command has to be used to initialize the ChaCha20 cipher. The value of the key, its key ID a nonce prefix and a check value have to be entered. As its name implies the check value can used to verify that the key value, key ID and nonce perfix have been entered correctly|
+|`edt`| This command allows to enter plaintext which is appended to current contents of the message buffer. Enter an empty line in order to leave this command. The maximum message length is currently set to 768 characters |
+|`lst`| Lists the current contents of the message buffer|
+|`new`| Clears and empties the message buffer|
+|`inf`| Prints information about an enrypted file on floppy disk |
+|`vic` (Only on C128)| Switches `edt` and `lst` to 40 column mode|
+|`vdc` (Only on C128)| Switches `edt` and `lst` to 80 column mode|
 
 
 # Generating key sheets
