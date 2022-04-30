@@ -144,4 +144,9 @@ cipher at a speed which even 35 years ago would have been absolutely acceptable.
 
 ## Advantages of using historical computers for cryptography
 
+At least the Commodore 8 bit computers provide an execution environment where memory management is absolutely deterministic, i.e. no 
+sensitive material is ever swapped to disk or moved to other memory locations. Additionally these machines are trustworthy in that 
+sense that it is in principle possible to verify what they exactly do at each point in time. They are understandable to such a degree
+that in fact several re-implementations (in hard- and software) do exist. 
+
 ## Disadvanages of using historical computers for cryptography
