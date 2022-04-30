@@ -28,6 +28,7 @@ the variables `ACME`, `C1541` and `WORKDIR` accordingly to reflect the situation
  
 # Using CBMCrypt
 
+## Commands
 CBMCrypt utilizes a user interface that is inspired by a command line interface. You have to type a command then
 you are queried for additional parameters and after that the command is executed. The following commands are
 understood by CBMCrypt:
@@ -39,7 +40,7 @@ understood by CBMCrypt:
 |`clr`| Clears the screen |
 |`dir`| Prints a directory listing of the selected floppy drive (8 is the default)|
 |`enc`| Encrypts the current contents of the message buffer and stores the ciphertext on floppy. This command only works after the `ini` comand was called successfully |
-|`dec`| Decrypts a file read from the floppy and stores the plaintext in the message buffer. This command only works after the `ini` comand was called successfully |
+|`dec`| Decrypts a file read from the floppy and stores the plaintext in the message buffer. This command only works after the `ini` comand was called successfully. The message buffer has to be empty when attempting a decryption |
 |`dev`| Can be used to select the device number (8-11) of the floppy drive to use for IO |
 |`ste`| Prints the current state of CBMCrypt. In detail is prints the floppy device number and if CBMCrypt has been properly initialized through the `ini` command. If this is the case the key ID of the key used during initialization is also printed |
 |`ini`| This command has to be used to initialize the ChaCha20 cipher. The value of the key, its key ID a nonce prefix and a check value have to be entered. As its name implies the check value can used to verify that the key value, key ID and nonce perfix have been entered correctly|
@@ -50,6 +51,9 @@ understood by CBMCrypt:
 |`vic` (Only on C128)| Switches `edt` and `lst` to 40 column mode|
 |`vdc` (Only on C128)| Switches `edt` and `lst` to 80 column mode|
 
+## Some background
+
+ChaCha20 is a cipher that makes use of a so called "number only used once" or nonce for short. 
 
 # Generating key sheets
 
