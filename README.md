@@ -78,6 +78,44 @@ bytes. After that follows a two byte length field which specifies the length of 
 
 # Generating key sheets
 
+Assuming that a group of `n` persons or parties wants to use CBMCrypt, then each of these persons has to be provided with a key sheet
+that lists for each key: 
+
+- The key value
+- The key ID
+- The nonce prefix of the corresponding party for that key
+- The check value
+
+As the nonce prefix is different for each party `n` key sheets have to be prepared. The group of people also has to agree for how long 
+a specific key has to be used, i.e. they have to agree when to change the key that is to be used when encrypting a new message. In the past
+key sheets for cryto machines were typically issued for a month and the key was changed daily. CBMCrypt comes with a key sheet generator
+called `keygen` that has a CLI. It can be configured using the following options:
+
+```
+Usage of ./keygen:
+  -copies uint
+    	Number of copies, i.e. number of participants (default 2)
+  -key-len uint
+    	Number of characters in key (default 16)
+  -num-keys uint
+    	Number of keys on sheet (default 31)
+  -renderer string
+    	How to render the key sheet (default "default")
+  -title string
+    	Title of the key sheet (default "Default")
+```
+
+`copies` has to specify how many parties (and therefore key sheets) have to be prepared. `key-len` can be used to change the number
+of characters in a key. The longer a key the better but longer keys are also more tedious to enter. The maximum number of key characters
+is 32 and the minimum is 15. `num-keys` determines how many key are to be generated. `renderer` determines how the key sheets are. The
+following values are allowed:
+
+| Name | Description |
+|-|-|
+|`default`| Only prints the raw values|
+|`txt`| Prints formatted text files to `stdout`|
+|`file`| Save the formatted text files in files named `copy_nr_0..n.txt`|
+
 # Some thoughts
 
 
