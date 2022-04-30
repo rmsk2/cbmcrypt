@@ -105,10 +105,10 @@ Usage of ./keygen:
     	Title of the key sheet (default "Default")
 ```
 
-`copies` has to specify how many parties (and therefore key sheets) have to be prepared. `key-len` can be used to change the number
+`-copies` has to specify how many parties (and therefore key sheets) have to be prepared. `-key-len` can be used to change the number
 of characters in a key. The longer a key the better but longer keys are also more tedious to enter. The maximum number of key characters
-is 32 and the minimum is 15. `num-keys` determines how many key are to be generated. `title` can be used to name the group of people
-the key sheet is intended to be used by. `renderer` determines how the key sheets are formatted. The following values are allowed:
+is 32 and the minimum is 15. `-num-keys` determines how many key are to be generated. `-title` can be used to name the group of people
+the key sheet is intended to be used by. `-renderer` determines how the key sheets are formatted. The following values are allowed:
 
 | Name | Description |
 |-|-|
