@@ -151,4 +151,4 @@ that in fact several highly compatible re-implementations (in hard- and software
 
 ## Disadvanages of using historical computers for cryptography
 
-They provide no way to generate random numbers in a secure way.
+They provide no way to generate random numbers in a secure way and they are horribly slow.
