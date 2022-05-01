@@ -162,4 +162,10 @@ and especially no radios (WiFi, Bluetooth, GSM, 4G, 5G, ...).
 
 ## Are you seriously proposing to use old computers for crypto?
 
-Well, not really. But this project shows that you can implement modern cryptographic algorithms on more or less primitive hardware.
+Well, not really. But this project shows that you can implement modern (symmetric) cryptographic algorithms as part of a usable piece
+of software on more or less primitive hardware. This is in my opinion relevant for the ongoing discussion about regulating the use
+of cryptographic algorithms by the general public. 
+
+If practically secure cryptographic algorithms can be implemented on a class of computer systems that in principle can be and in fact 
+has been be built by people with the relevant knowledge but very limited resources it becomes obvious that regulating the use of 
+cryptogaphy in an ab solute sense requires in essence regulating knowledge and general purpose computing. 
