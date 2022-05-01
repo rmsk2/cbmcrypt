@@ -146,8 +146,12 @@ cipher at a speed which even 35 years ago would have been absolutely acceptable.
 
 At least the Commodore 8 bit computers provide an execution environment where memory management is absolutely deterministic, i.e. no 
 sensitive material is ever swapped to disk or moved to other memory locations. Additionally these machines are trustworthy in that 
-sense that it is in principle possible to know what they exactly do at each point in time. They are understandable to such a degree
-that in fact several highly compatible re-implementations (in hard- and software) do exist. 
+sense that it is in principle possible to know what they exactly do at each point in time. In that sense they are understandable to 
+such a degree that in fact several highly compatible re-implementations (in hard- and software) do exist.
+
+These old machines also have another very desirable attribute from a security point of view. They can be put in a known good state
+by simply switching them off and on again. I.e. even if they are compromised there is no way to persist malware inside these
+systems because the operating system is in ROM and there is no non volatile memory of any sort in them.
 
 ## Disadvanages of using historical computers for cryptography
 
