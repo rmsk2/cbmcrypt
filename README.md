@@ -146,13 +146,20 @@ cipher at a speed which even 35 years ago would have been absolutely acceptable.
 
 At least the Commodore 8 bit computers provide an execution environment where memory management is absolutely deterministic, i.e. no 
 sensitive material is ever swapped to disk or moved to other memory locations. Additionally these machines are trustworthy in that 
-sense that it is in principle possible to know what they exactly do at each point in time. In that sense they are understandable to 
-such a degree that in fact several highly compatible re-implementations (in hard- and software) do exist.
+sense that it is in principle possible to know what they exactly do at each point in time. In fact they are understandable to 
+such a degree that several highly compatible re-implementations (in hard- and software) do exist.
 
-These old machines also have another very desirable attribute from a security point of view. They can be put in a known good state
+These old machines also have another very desirable property from a security point of view. They can be put in a known good state
 by simply switching them off and on again. I.e. even if they are compromised there is no way to persist malware inside these
-systems because the operating system is in ROM and there is no non volatile memory of any sort in them.
+systems because the operating system is in ROM and there is no other from of non volatile memory of any sort in them.
 
-## Disadvanages of using historical computers for cryptography
+In modern systems we may find these properties in Smart cards and other dedicated security hardware, but these systems do not provide
+any means of interacting with them without attaching them to a "real" computer. These old machines on the other hand integrate a keyboard
+and hardware to interface with a display, i.e. a TV or monitor.
 
-They provide no way to generate random numbers in a secure way and they are horribly slow.
+Another security relevant property is the fact that these systems are inherently air gapped as they do not contain networking hardware
+and especially no radios (WiFi, Bluetooth, GSM, 4G, 5G, ...).
+
+## Are you seriously proposing to use old computers for crypto?
+
+Well, not really. But this project shows that you can implement modern cryptographic algorithms on more or less primitive hardware.
