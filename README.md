@@ -28,9 +28,11 @@ the variables `ACME`, `C1541` and `WORKDIR` accordingly to reflect the situation
  
 # Using CBMCrypt
 
-## Commands
+## LOADing and RUNning CBMCrypt
 
 Use `LOAD"*",8,1` or `LOAD"CBMCRYPT",8` followed by `RUN` in order to start CBMCrypt. 
+
+## Commands
 
 CBMCrypt utilizes a user interface that is inspired by a command line interface. You have to type a command followed by enter, then
 you are queried for additional parameters and after that the command is executed. The following commands are
