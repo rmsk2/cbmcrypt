@@ -173,4 +173,4 @@ of cryptographic algorithms by the general public.
 
 If practically secure cryptographic algorithms can be implemented on a class of computer systems that in principle can be and in fact 
 have been built by people with the relevant knowledge but very limited resources it becomes obvious that regulating the use of 
-cryptogaphy in an absolute sense requires in essence regulating knowledge and general purpose computing. 
+cryptography in an absolute sense requires in essence regulating knowledge and general purpose computing. 
